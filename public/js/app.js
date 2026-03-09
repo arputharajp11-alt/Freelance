@@ -469,6 +469,53 @@ function openProposalModal() {
     if (m) m.classList.add('show');
 }
 
+// ── Proposal form submit ──────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('proposalForm');
+    if (!form) return; // only on job-detail page
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const jobId = new URLSearchParams(location.search).get('id');
+        if (!jobId) { showToast('Job ID missing', 'error'); return; }
+
+        const amount   = document.getElementById('propAmount')?.value?.trim();
+        const delivery = document.getElementById('propDelivery')?.value?.trim();
+        const letter   = document.getElementById('propLetter')?.value?.trim();
+
+        if (!amount || !letter) {
+            showToast('Please fill in all required fields', 'error');
+            return;
+        }
+
+        const submitBtn = form.querySelector('button[type=submit]');
+        const originalText = submitBtn ? submitBtn.textContent : '';
+        if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = '⏳ Submitting…'; }
+
+        try {
+            await apiFetch(`/jobs/${jobId}/apply`, {
+                method: 'POST',
+                body: JSON.stringify({
+                    cover_letter: letter,
+                    proposed_amount: parseFloat(amount),
+                    estimated_duration: delivery || ''
+                })
+            });
+            showToast('✅ Proposal submitted successfully!', 'success');
+            closeModal();
+            form.reset();
+            // Reload job to show updated proposal count
+            setTimeout(() => location.reload(), 1200);
+        } catch (err) {
+            showToast(err.message || 'Failed to submit proposal', 'error');
+        } finally {
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = originalText; }
+        }
+    });
+});
+
+
 async function hireFreelancer(jobId, freelancerId) {
     if (!confirm('Hire this freelancer and move the job to In Progress?')) return;
     try {
