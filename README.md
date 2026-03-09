@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # 🚀 FreelancerHub
 
 A **blockchain-powered freelance marketplace** with smart contract escrow, real-time chat, and email notifications.
@@ -220,3 +221,6 @@ The `FreelancerEscrow` contract handles:
 ## 📝 License
 
 MIT
+=======
+# Freelance
+>>>>>>> 2b8e54901789c1968596b2dc852ce07e583672d8
