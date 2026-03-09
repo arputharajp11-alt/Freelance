@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="Create your free FreelancerHub account and start working on blockchain-secured projects.">
+    <title>Get Started — FreelancerHub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/advanced.css">
+    <link rel="stylesheet" href="/css/theme.css">
+    <style>
+        /* ── Register Page Overrides ────────────────────────────────── */
+        .register-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 100px 20px 60px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .register-wrapper {
+            width: 100%;
+            max-width: 520px;
+        }
+
+        /* ── Card ─────────────────────────────────────────────────── */
+        .register-card {
+            background: rgba(8, 12, 28, 0.85);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 1px solid rgba(168, 85, 247, 0.2);
+            border-radius: 28px;
+            padding: 44px;
+            box-shadow:
+                0 0 0 1px rgba(168, 85, 247, 0.06),
+                0 20px 60px rgba(0, 0, 0, 0.5),
+                0 0 80px rgba(168, 85, 247, 0.08);
+            animation: cardIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .register-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg,
+                    transparent 0%,
+                    rgba(168, 85, 247, 0.9) 30%,
+                    rgba(34, 211, 238, 0.8) 60%,
+                    rgba(16, 185, 129, 0.6) 80%,
+                    transparent 100%);
+            border-radius: 28px 28px 0 0;
+        }
+
+        @keyframes cardIn {
+            from {
+                opacity: 0;
+                transform: translateY(24px) scale(0.97);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* ── Header ───────────────────────────────────────────────── */
+        .register-header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .register-logo {
+            width: 60px;
+            height: 60px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #7c3aed, #06b6d4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            margin: 0 auto 18px;
+            box-shadow: 0 0 30px rgba(124, 58, 237, 0.5), 0 0 60px rgba(6, 182, 212, 0.2);
+            animation: logoGlowPulse 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes logoGlowPulse {
+            from {
+                box-shadow: 0 0 20px rgba(124, 58, 237, 0.5);
+            }
+
+            to {
+                box-shadow: 0 0 40px rgba(6, 182, 212, 0.6), 0 0 80px rgba(168, 85, 247, 0.2);
+            }
+        }
+
+        .register-header h1 {
+            font-size: 1.85rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            margin: 0 0 8px;
+            background: linear-gradient(135deg, #fff 0%, #c4b5fd 60%, #67e8f9 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .register-header p {
+            font-size: 0.88rem;
+            color: rgba(148, 163, 184, 0.8);
+            margin: 0;
+        }
+
+        /* ── Role Selector ─────────────────────────────────────────── */
+        .role-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .role-option {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .role-option input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .role-option label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            padding: 16px 12px;
+            border-radius: 16px;
+            border: 1.5px solid rgba(168, 85, 247, 0.15);
+            background: rgba(3, 6, 15, 0.5);
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: rgba(148, 163, 184, 0.7);
+            text-align: center;
+            user-select: none;
+        }
+
+        .role-option label .role-emoji {
+            font-size: 1.8rem;
+            line-height: 1;
+            transition: transform 0.25s ease;
+        }
+
+        .role-option input[type="radio"]:checked+label {
+            border-color: rgba(124, 58, 237, 0.7);
+            background: linear-gradient(135deg, rgba(124, 58, 237, 0.15), rgba(6, 182, 212, 0.08));
+            color: #e9d5ff;
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15), 0 0 20px rgba(124, 58, 237, 0.2);
+        }
+
+        .role-option input[type="radio"]:checked+label .role-emoji {
+            transform: scale(1.15);
+        }
+
+        .role-option label:hover {
+            border-color: rgba(168, 85, 247, 0.4);
+            background: rgba(168, 85, 247, 0.07);
+            color: #c4b5fd;
+            transform: translateY(-2px);
+        }
+
+        /* ── Form ─────────────────────────────────────────────────── */
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.09em;
+            text-transform: uppercase;
+            color: rgba(168, 85, 247, 0.85);
+            margin-bottom: 8px;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1rem;
+            pointer-events: none;
+            opacity: 0.55;
+            transition: opacity 0.2s ease;
+        }
+
+        .form-input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 13px 16px 13px 44px !important;
+            border-radius: 14px !important;
+            background: rgba(3, 6, 15, 0.65) !important;
+            border: 1.5px solid rgba(168, 85, 247, 0.15) !important;
+            color: #e2e8f0 !important;
+            font-size: 0.9rem !important;
+            transition: all 0.25s ease !important;
+            outline: none;
+        }
+
+        .form-input:focus {
+            border-color: rgba(124, 58, 237, 0.65) !important;
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12), 0 0 20px rgba(124, 58, 237, 0.1) !important;
+            background: rgba(3, 6, 15, 0.85) !important;
+        }
+
+        .form-input:focus~.input-icon,
+        .input-wrapper:focus-within .input-icon {
+            opacity: 1;
+        }
+
+        .form-input.input-valid {
+            border-color: rgba(16, 185, 129, 0.5) !important;
+        }
+
+        .form-input.input-error {
+            border-color: rgba(239, 68, 68, 0.6) !important;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.08) !important;
+        }
+
+        .field-feedback {
+            font-size: 0.75rem;
+            margin-top: 6px;
+            min-height: 18px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s ease;
+        }
+
+        .field-feedback.error {
+            color: #f87171;
+        }
+
+        .field-feedback.success {
+            color: #34d399;
+        }
+
+        /* ── Password Strength ────────────────────────────────────── */
+        .pw-strength-bar {
+            height: 3px;
+            border-radius: 3px;
+            background: rgba(148, 163, 184, 0.1);
+            margin-top: 8px;
+            overflow: hidden;
+        }
+
+        .pw-strength-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.4s ease, background 0.4s ease;
+            width: 0%;
+        }
+
+        .pw-strength-text {
+            font-size: 0.73rem;
+            margin-top: 5px;
+            transition: color 0.3s ease;
+            color: rgba(148, 163, 184, 0.6);
+        }
+
+        /* ── Toggle Password ──────────────────────────────────────── */
+        .toggle-pw {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            color: rgba(148, 163, 184, 0.5);
+            transition: color 0.2s ease;
+            padding: 4px;
+            z-index: 1;
+        }
+
+        .toggle-pw:hover {
+            color: rgba(168, 85, 247, 0.9);
+        }
+
+        /* ── Submit Button ────────────────────────────────────────── */
+        .btn-register {
+            width: 100%;
+            padding: 15px 24px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #7c3aed, #06b6d4);
+            color: white;
+            font-size: 0.95rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 24px rgba(124, 58, 237, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+            margin-top: 8px;
+        }
+
+        .btn-register::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -60%;
+            width: 80%;
+            height: 200%;
+            background: rgba(255, 255, 255, 0.1);
+            transform: skewX(-20deg);
+            transition: left 0.5s ease;
+        }
+
+        .btn-register:hover::after {
+            left: 140%;
+        }
+
+        .btn-register:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 40px rgba(124, 58, 237, 0.65), 0 0 60px rgba(6, 182, 212, 0.25);
+        }
+
+        .btn-register:active:not(:disabled) {
+            transform: translateY(-1px);
+        }
+
+        .btn-register:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .btn-register .btn-spinner {
+            display: none;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            margin-right: 10px;
+        }
+
+        .btn-register.loading .btn-spinner {
+            display: inline-block;
+        }
+
+        .btn-register.loading .btn-text {
+            opacity: 0.8;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* ── Divider ──────────────────────────────────────────────── */
+        .auth-divider {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin: 24px 0;
+        }
+
+        .auth-divider::before,
+        .auth-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: rgba(168, 85, 247, 0.12);
+        }
+
+        .auth-divider span {
+            font-size: 0.75rem;
+            color: rgba(148, 163, 184, 0.4);
+            white-space: nowrap;
+        }
+
+        /* ── Footer Links ─────────────────────────────────────────── */
+        .register-footer {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .register-footer p {
+            font-size: 0.85rem;
+            color: rgba(148, 163, 184, 0.6);
+            margin: 0 0 16px;
+        }
+
+        .register-footer a {
+            color: #a78bfa;
+            font-weight: 700;
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .register-footer a:hover {
+            color: #22d3ee;
+            text-decoration: underline;
+        }
+
+        /* ── Trust Badges ─────────────────────────────────────────── */
+        .trust-badges {
+            display: flex;
+            justify-content: center;
+            gap: 18px;
+            margin-top: 20px;
+            padding: 14px 18px;
+            background: rgba(16, 185, 129, 0.05);
+            border: 1px solid rgba(16, 185, 129, 0.12);
+            border-radius: 14px;
+        }
+
+        .trust-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.75rem;
+            color: rgba(52, 211, 153, 0.8);
+            font-weight: 600;
+        }
+
+        .trust-item .check {
+            font-size: 0.85rem;
+        }
+
+        /* ── Form section label ───────────────────────────────────── */
+        .section-label {
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.09em;
+            text-transform: uppercase;
+            color: rgba(168, 85, 247, 0.85);
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        /* ── Mobile ───────────────────────────────────────────────── */
+        @media (max-width: 600px) {
+            .register-card {
+                padding: 28px 20px;
+                border-radius: 20px;
+            }
+
+            .register-header h1 {
+                font-size: 1.5rem;
+            }
+
+            .trust-badges {
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ─── NAVBAR ─── -->
+    <nav class="navbar">
+        <a href="/" class="navbar-brand">
+            <div class="logo-icon">&#9670;</div>
+            <span>FreelancerHub</span>
+        </a>
+        <div class="navbar-right">
+            <a href="/login.html" class="btn btn-outline btn-sm" id="navLogin">Sign In</a>
+            <a href="/register.html" class="btn btn-primary btn-sm" id="navRegister">Get Started</a>
+        </div>
+    </nav>
+
+    <div class="toast-container" id="toastContainer"></div>
+    <div class="orb-mid"></div>
+
+    <main class="register-page">
+        <div class="register-wrapper">
+            <div class="register-card">
+
+                <!-- Header -->
+                <div class="register-header">
+                    <div class="register-logo">&#9670;</div>
+                    <h1>Join FreelancerHub</h1>
+                    <p>Create your free account — takes less than a minute</p>
+                </div>
+
+                <form id="registerForm" onsubmit="handleRegister(event)" novalidate autocomplete="on">
+
+                    <!-- Role Selector -->
+                    <div style="margin-bottom: 24px;">
+                        <span class="section-label">I want to</span>
+                        <div class="role-selector">
+                            <div class="role-option">
+                                <input type="radio" name="role" id="roleFreelancer" value="freelancer" checked>
+                                <label for="roleFreelancer">
+                                    <span class="role-emoji">🧑‍💻</span>
+                                    Work as Freelancer
+                                </label>
+                            </div>
+                            <div class="role-option">
+                                <input type="radio" name="role" id="roleClient" value="client">
+                                <label for="roleClient">
+                                    <span class="role-emoji">🏢</span>
+                                    Hire Talent
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Full Name -->
+                    <div class="form-group">
+                        <label class="form-label" for="regName">Full Name</label>
+                        <div class="input-wrapper">
+                            <span class="input-icon">👤</span>
+                            <input type="text" class="form-input" id="regName" placeholder="Your full name" required
+                                autocomplete="name" oninput="validateName(this)">
+                        </div>
+                        <div class="field-feedback" id="nameFeedback"></div>
+                    </div>
+
+                    <!-- Email -->
+                    <div class="form-group">
+                        <label class="form-label" for="regEmail">Email Address</label>
+                        <div class="input-wrapper">
+                            <span class="input-icon">✉️</span>
+                            <input type="email" class="form-input" id="regEmail" placeholder="you@example.com" required
+                                autocomplete="email" oninput="validateEmail(this)">
+                        </div>
+                        <div class="field-feedback" id="emailFeedback"></div>
+                    </div>
+
+                    <!-- Password -->
+                    <div class="form-group">
+                        <label class="form-label" for="regPassword">Password</label>
+                        <div class="input-wrapper">
+                            <span class="input-icon">🔒</span>
+                            <input type="password" class="form-input" id="regPassword"
+                                placeholder="At least 6 characters" required minlength="6" autocomplete="new-password"
+                                oninput="validatePassword(this)">
+                            <button type="button" class="toggle-pw" id="togglePw" onclick="togglePassword()"
+                                aria-label="Toggle password visibility">
+                                👁
+                            </button>
+                        </div>
+                        <div class="pw-strength-bar">
+                            <div class="pw-strength-fill" id="pwStrengthFill"></div>
+                        </div>
+                        <div class="field-feedback" id="passwordFeedback"></div>
+                    </div>
+
+                    <!-- Submit -->
+                    <button type="submit" class="btn-register" id="registerSubmit">
+                        <span class="btn-spinner" id="submitSpinner"></span>
+                        <span class="btn-text" id="submitText">✨ Create Free Account</span>
+                    </button>
+
+                </form>
+
+                <!-- Divider -->
+                <div class="auth-divider">
+                    <span>Already have an account?</span>
+                </div>
+
+                <!-- Sign in link -->
+                <div class="register-footer">
+                    <p>
+                        <a href="/login.html">Sign in to your account →</a>
+                    </p>
+                </div>
+
+                <!-- Trust Badges -->
+                <div class="trust-badges">
+                    <div class="trust-item">
+                        <span class="check">✓</span>
+                        Free forever
+                    </div>
+                    <div class="trust-item">
+                        <span class="check">✓</span>
+                        No credit card
+                    </div>
+                    <div class="trust-item">
+                        <span class="check">✓</span>
+                        Instant access
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <script src="/js/config.js"></script>
+    <script src="/js/theme.js"></script>
+    <script src="/js/app.js"></script>
+    <script>
+        // Redirect if already logged in
+        if (isLoggedIn()) location.href = '/dashboard.html';
+
+        // ── Inline Validation ───────────────────────────────────────
+        function showFieldError(feedbackId, inputEl, msg) {
+            const fb = document.getElementById(feedbackId);
+            if (fb) { fb.innerHTML = '⚠️ ' + msg; fb.className = 'field-feedback error'; }
+            if (inputEl) inputEl.classList.add('input-error');
+            if (inputEl) inputEl.classList.remove('input-valid');
+        }
+
+        function showFieldSuccess(feedbackId, inputEl, msg) {
+            const fb = document.getElementById(feedbackId);
+            if (fb) { fb.innerHTML = '✓ ' + msg; fb.className = 'field-feedback success'; }
+            if (inputEl) inputEl.classList.remove('input-error');
+            if (inputEl) inputEl.classList.add('input-valid');
+        }
+
+        function clearFieldFeedback(feedbackId, inputEl) {
+            const fb = document.getElementById(feedbackId);
+            if (fb) { fb.innerHTML = ''; fb.className = 'field-feedback'; }
+            if (inputEl) { inputEl.classList.remove('input-error', 'input-valid'); }
+        }
+
+        function validateName(el) {
+            const v = el.value.trim();
+            if (!v) { clearFieldFeedback('nameFeedback', el); return false; }
+            if (v.length < 2) { showFieldError('nameFeedback', el, 'Name must be at least 2 characters'); return false; }
+            if (!/^[a-zA-Z\s'-]+$/.test(v)) { showFieldError('nameFeedback', el, 'Only letters, spaces, hyphens and apostrophes'); return false; }
+            showFieldSuccess('nameFeedback', el, 'Looks good!');
+            return true;
+        }
+
+        function validateEmail(el) {
+            const v = el.value.trim();
+            if (!v) { clearFieldFeedback('emailFeedback', el); return false; }
+            const re = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+            if (!re.test(v)) { showFieldError('emailFeedback', el, 'Enter a valid email address'); return false; }
+            showFieldSuccess('emailFeedback', el, 'Valid email');
+            return true;
+        }
+
+        function validatePassword(el) {
+            const v = el.value;
+            const fill = document.getElementById('pwStrengthFill');
+            const fb = document.getElementById('passwordFeedback');
+
+            if (!v) {
+                clearFieldFeedback('passwordFeedback', el);
+                if (fill) { fill.style.width = '0%'; fill.style.background = ''; }
+                return false;
+            }
+
+            // Strength scoring
+            let score = 0;
+            if (v.length >= 6) score++;
+            if (v.length >= 10) score++;
+            if (/[A-Z]/.test(v)) score++;
+            if (/[0-9]/.test(v)) score++;
+            if (/[^A-Za-z0-9]/.test(v)) score++;
+
+            const levels = [
+                { pct: '20%', color: '#ef4444', label: 'Too weak' },
+                { pct: '40%', color: '#f97316', label: 'Weak' },
+                { pct: '60%', color: '#eab308', label: 'Fair' },
+                { pct: '80%', color: '#22c55e', label: 'Good' },
+                { pct: '100%', color: '#10b981', label: 'Strong 💪' }
+            ];
+            const lvl = levels[Math.min(score - 1, 4)] || levels[0];
+
+            if (fill) { fill.style.width = lvl.pct; fill.style.background = lvl.color; }
+
+            if (v.length < 6) {
+                showFieldError('passwordFeedback', el, 'Must be at least 6 characters');
+                return false;
+            }
+            if (fb) { fb.innerHTML = '✓ ' + lvl.label; fb.className = 'field-feedback success'; }
+            el.classList.remove('input-error');
+            el.classList.add('input-valid');
+            return true;
+        }
+
+        // ── Toggle Password Visibility ──────────────────────────────
+        function togglePassword() {
+            const inp = document.getElementById('regPassword');
+            const btn = document.getElementById('togglePw');
+            if (inp.type === 'password') {
+                inp.type = 'text';
+                btn.textContent = '🙈';
+            } else {
+                inp.type = 'password';
+                btn.textContent = '👁';
+            }
+        }
+
+        // ── Submit Handler ──────────────────────────────────────────
+        async function handleRegister(e) {
+            e.preventDefault();
+
+            const role = document.querySelector('input[name="role"]:checked').value;
+            const nameEl = document.getElementById('regName');
+            const emailEl = document.getElementById('regEmail');
+            const pwEl = document.getElementById('regPassword');
+            const btn = document.getElementById('registerSubmit');
+            const spinner = document.getElementById('submitSpinner');
+            const btnText = document.getElementById('submitText');
+
+            const full_name = nameEl.value.trim();
+            const email = emailEl.value.trim().toLowerCase();
+            const password = pwEl.value;
+
+            // Run all validations
+            const nameOk = validateName(nameEl);
+            const emailOk = validateEmail(emailEl);
+            const pwOk = validatePassword(pwEl);
+
+            if (!nameOk || !emailOk || !pwOk) {
+                // Focus the first invalid field
+                if (!nameOk) nameEl.focus();
+                else if (!emailOk) emailEl.focus();
+                else pwEl.focus();
+                return;
+            }
+
+            // Set loading state
+            btn.disabled = true;
+            btn.classList.add('loading');
+            btnText.textContent = 'Creating your account…';
+
+            try {
+                const data = await apiFetch('/auth/register', {
+                    method: 'POST',
+                    body: JSON.stringify({ full_name, email, password, role })
+                });
+
+                if (!data) return; // apiFetch redirected on 401
+
+                setToken(data.token);
+                setUser(data.user);
+
+                // Success state
+                btnText.textContent = '✅ Account Created!';
+                btn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+                btn.classList.remove('loading');
+
+                showToast('🎉 Welcome to FreelancerHub! Redirecting…', 'success');
+                setTimeout(() => { window.location.href = '/dashboard.html'; }, 1200);
+
+            } catch (err) {
+                btn.disabled = false;
+                btn.classList.remove('loading');
+                btnText.textContent = '✨ Create Free Account';
+
+                const msg = err.message || 'Registration failed. Please try again.';
+
+                // Map server errors to user-friendly messages
+                if (msg.includes('already registered') || msg.includes('already exists')) {
+                    showFieldError('emailFeedback', emailEl, 'This email is already registered');
+                    showToast('Email already registered. Try signing in instead.', 'error');
+                    emailEl.focus();
+                } else if (msg.includes('password')) {
+                    showFieldError('passwordFeedback', pwEl, 'Password does not meet requirements');
+                    showToast(msg, 'error');
+                    pwEl.focus();
+                } else if (msg.includes('connect') || msg.includes('ETIMEDOUT') || msg.includes('server')) {
+                    showToast('Connection error — the server is starting up. Wait a moment and try again.', 'error');
+                } else {
+                    showToast(msg, 'error');
+                }
+            }
+        }
+
+        // ── Ripple on button ────────────────────────────────────────
+        document.getElementById('registerSubmit').addEventListener('click', function (e) {
+            const r = document.createElement('span');
+            const rect = this.getBoundingClientRect();
+            const sz = Math.max(rect.width, rect.height) * 2;
+            r.style.cssText = `position:absolute;border-radius:50%;transform:scale(0);animation:rippleAnim 0.6s linear;background:rgba(255,255,255,0.15);width:${sz}px;height:${sz}px;left:${e.clientX - rect.left - sz / 2}px;top:${e.clientY - rect.top - sz / 2}px;pointer-events:none;`;
+            this.appendChild(r);
+            setTimeout(() => r.remove(), 700);
+        });
+
+        // ── Enter key advances fields ───────────────────────────────
+        document.getElementById('regName').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); document.getElementById('regEmail').focus(); }
+        });
+        document.getElementById('regEmail').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); document.getElementById('regPassword').focus(); }
+        });
+    </script>
+
+</body>
+
+</html>

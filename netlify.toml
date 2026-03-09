@@ -1,0 +1,36 @@
+# ─── Netlify Configuration ───────────────────────────────────────────────────
+# Frontend: served from public/ folder (static HTML/CSS/JS)
+# Backend:  Netlify Functions at netlify/functions/api.js (serverless Express)
+# Database: Neon PostgreSQL (DATABASE_URL set in Netlify environment variables)
+# ─────────────────────────────────────────────────────────────────────────────
+
+[build]
+  publish   = "public"
+  functions = "netlify/functions"
+  command   = "npm install --ignore-scripts"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# ── Route /api/* to the serverless function ──────────────────────────────────
+# IMPORTANT: We preserve the full path so Express sees /api/auth/login etc.
+# The serverless function receives the event.path which includes /api/...
+[[redirects]]
+  from   = "/api/*"
+  to     = "/.netlify/functions/api"
+  status = 200
+  force  = true
+
+# ── SPA fallback: all other routes serve index.html ──────────────────────────
+[[redirects]]
+  from   = "/*"
+  to     = "/index.html"
+  status = 200
+
+# ── Security + CORS headers for API responses ────────────────────────────────
+[[headers]]
+  for = "/.netlify/functions/*"
+  [headers.values]
+    Access-Control-Allow-Origin  = "*"
+    Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+    Access-Control-Allow-Headers = "Content-Type, Authorization"

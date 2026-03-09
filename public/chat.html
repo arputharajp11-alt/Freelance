@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Chat with freelancers and clients on FreelancerHub.">
+    <title>Messages — FreelancerHub</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/advanced.css">
+    <link rel="stylesheet" href="/css/theme.css">
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <a href="/" class="navbar-brand">
+            <div class="logo-icon">&#9670;</div><span>FreelancerHub</span>
+        </a>
+        <ul class="navbar-links" id="navLinks">
+            <li><a href="/jobs.html">&#128188; Jobs</a></li>
+            <li><a href="/dashboard.html">&#128202; Dashboard</a></li>
+            <li><a href="/chat.html" class="active">&#128172; Chat</a></li>
+            <li><a href="/notifications.html">&#128276; Alerts</a></li>
+        </ul>
+        <div class="navbar-right">
+            <a href="/login.html" class="btn btn-outline btn-sm" id="navLogin" style="display:none;">Sign In</a>
+            <a href="/register.html" class="btn btn-primary btn-sm" id="navRegister" style="display:none;">Get
+                Started</a>
+            <div class="nav-dropdown" id="navUser">
+                <div class="nav-avatar" id="navAvatar" onclick="toggleDropdown()">U</div>
+                <div class="nav-dropdown-menu" id="navDropdown">
+                    <a href="/profile.html">&#128100; Profile</a>
+                    <a href="/dashboard.html">&#128202; Dashboard</a>
+                    <a href="/wallet.html">&#128176; Wallet</a>
+                    <div class="nav-dropdown-divider"></div>
+                    <a href="#" onclick="logout();return false;" style="color:var(--error);">&#128682; Sign Out</a>
+                </div>
+            </div>
+            <button class="nav-toggle" onclick="toggleNav()">&#9776;</button>
+        </div>
+    </nav>
+
+    <div class="toast-container" id="toastContainer"></div>
+    <div class="orb-mid"></div>
+
+    <main class="main-content">
+        <div class="container" style="padding-top:16px;height:calc(100vh - 68px);display:flex;flex-direction:column;">
+            <div class="chat-layout" style="flex:1;">
+
+                <!-- Sidebar -->
+                <div class="chat-sidebar" id="chatSidebar">
+                    <div class="chat-sidebar-header">
+                        <h2>&#128172; Messages</h2>
+                    </div>
+                    <div class="conversation-list" id="conversationList">
+                        <div class="loading-overlay" style="padding:40px 0;">
+                            <div class="loading-spinner"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main chat area -->
+                <div class="chat-main">
+                    <div class="chat-empty" id="chatEmpty">
+                        <div style="font-size:3rem;">&#128172;</div>
+                        <div style="font-weight:600;color:var(--text-secondary);">Select a conversation</div>
+                        <div style="font-size:0.85rem;color:var(--text-muted);">Choose from your conversations on the
+                            left</div>
+                    </div>
+
+                    <div id="chatActiveArea" style="display:none;height:100%;flex-direction:column;display:none;">
+                        <div class="chat-header" id="chatHeader">
+                            <div class="conversation-avatar">?</div>
+                            <div>
+                                <div style="font-weight:700;" id="chatPartnerName">—</div>
+                                <div style="font-size:0.75rem;color:var(--text-muted);" id="chatJobTitle">—</div>
+                            </div>
+                        </div>
+                        <div class="chat-messages" id="chatMessages"></div>
+                        <div class="chat-input-area" id="chatInputArea">
+                            <input type="text" class="form-input" id="messageInput" placeholder="Type a message..."
+                                onkeydown="handleMsgKey(event)">
+                            <button class="btn btn-primary" onclick="sendMessage()">Send &#10148;</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <script src="/js/config.js"></script>
+    <script src="/js/theme.js"></script>
+    <script src="/js/app.js"></script>
+    <script>
+        requireAuth();
+        loadConversations();
+
+        // Override openConversation to also update header
+        const _origOpen = openConversation;
+        function openConversation(convId, partnerName, jobTitle) {
+            document.getElementById('chatEmpty').style.display = 'none';
+            const area = document.getElementById('chatActiveArea');
+            area.style.display = 'flex';
+
+            if (partnerName) {
+                document.getElementById('chatPartnerName').textContent = partnerName;
+                document.getElementById('chatJobTitle').textContent = jobTitle || '';
+                const av = area.querySelector('.conversation-avatar');
+                if (av) av.textContent = (partnerName || '?').charAt(0).toUpperCase();
+            }
+            _origOpen(convId);
+        }
+
+        // Re-wire conversation items to pass name + job
+        const _origLoadConvs = loadConversations;
+        function loadConversations() {
+            const el = document.getElementById('conversationList');
+            if (!el || !isLoggedIn()) return;
+            apiFetch('/chat/conversations')
+                .then(d => {
+                    const convs = d.conversations || [];
+                    if (!convs.length) {
+                        el.innerHTML = '<div class="empty-state" style="padding:40px 16px;"><div class="empty-state-icon">&#128172;</div><p>No conversations yet.</p></div>';
+                        return;
+                    }
+                    el.innerHTML = convs.map(c => `
+                    <div class="conversation-item" onclick="openConversation('${c.id}', ${JSON.stringify(c.other_name || 'Unknown')}, ${JSON.stringify(c.job_title || '')})">
+                        <div class="conversation-avatar">
+                            ${(c.other_name || '?').charAt(0).toUpperCase()}
+                            ${c.other_online ? '<span class="online-dot"></span>' : ''}
+                        </div>
+                        <div class="conversation-info">
+                            <div class="conversation-name">${escapeHtml(c.other_name || 'Unknown')}</div>
+                            <div class="conversation-preview">${escapeHtml(c.last_message || 'No messages yet')}</div>
+                        </div>
+                        ${c.unread_count > 0 ? `<span class="nav-badge">${c.unread_count}</span>` : ''}
+                    </div>
+                `).join('');
+                })
+                .catch(() => { el.innerHTML = '<div class="empty-state"><p>Could not load.</p></div>'; });
+        }
+        loadConversations();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="FreelancerHub — The blockchain-powered decentralized freelance marketplace. Find top talent or get hired. Secure escrow payments via smart contracts.">
+    <title>FreelancerHub — Decentralized Freelance Marketplace</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/advanced.css">
+    <link rel="stylesheet" href="/css/theme.css">
+</head>
+
+<body>
+
+    <!-- ─── NAVBAR ─── -->
+    <nav class="navbar">
+        <a href="/" class="navbar-brand">
+            <div class="logo-icon">&#9670;</div>
+            <span>FreelancerHub</span>
+        </a>
+        <ul class="navbar-links" id="navLinks">
+            <li><a href="/jobs.html">&#128188; Jobs</a></li>
+            <li><a href="/dashboard.html">&#128202; Dashboard</a></li>
+            <li><a href="/chat.html">&#128172; Chat</a></li>
+            <li><a href="/notifications.html">&#128276; Alerts</a></li>
+        </ul>
+        <div class="navbar-right">
+            <a href="/login.html" class="btn btn-outline btn-sm" id="navLogin">Sign In</a>
+            <a href="/register.html" class="btn btn-primary btn-sm" id="navRegister">Get Started</a>
+            <div class="nav-dropdown" id="navUser" style="display:none;">
+                <div class="nav-avatar" id="navAvatar" onclick="toggleDropdown()">U</div>
+                <div class="nav-dropdown-menu" id="navDropdown">
+                    <a href="/profile.html">&#128100; Profile</a>
+                    <a href="/dashboard.html">&#128202; Dashboard</a>
+                    <a href="/wallet.html">&#128176; Wallet</a>
+                    <div class="nav-dropdown-divider"></div>
+                    <a href="#" onclick="logout();return false;" style="color:var(--error);">&#128682; Sign Out</a>
+                </div>
+            </div>
+            <button class="nav-toggle" onclick="toggleNav()">&#9776;</button>
+        </div>
+    </nav>
+
+    <div class="toast-container" id="toastContainer"></div>
+    <div class="orb-mid"></div>
+
+    <main class="main-content">
+
+        <!-- ─── HERO ─── -->
+        <section class="hero">
+            <div class="container">
+                <div class="hero-badge">&#9889; Powered by Blockchain Technology</div>
+                <h1 class="hero-title">
+                    The Future of<br>
+                    <span class="gradient-text">Freelancing</span> is Here
+                </h1>
+                <p class="hero-subtitle">
+                    Connect with world-class talent worldwide. Secure payments via smart contracts,
+                    immutable reputation, zero hidden fees.
+                </p>
+                <div class="hero-actions">
+                    <a href="/jobs.html" class="btn btn-primary btn-lg">&#128269; Explore Jobs</a>
+                    <a href="/register.html" class="btn btn-secondary btn-lg">&#128640; Start Earning</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- ─── STATS ─── -->
+        <section class="stats-section">
+            <div class="container">
+                <div class="stats-bar">
+                    <div class="stat-card reveal">
+                        <div class="stat-value" id="statJobs">—</div>
+                        <div class="stat-label">Active Jobs</div>
+                    </div>
+                    <div class="stat-card reveal">
+                        <div class="stat-value" id="statFreelancers">—</div>
+                        <div class="stat-label">Freelancers</div>
+                    </div>
+                    <div class="stat-card reveal">
+                        <div class="stat-value" id="statCompleted">—</div>
+                        <div class="stat-label">Completed</div>
+                    </div>
+                    <div class="stat-card reveal">
+                        <div class="stat-value" id="statUsers">—</div>
+                        <div class="stat-label">Total Users</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ─── FEATURES ─── -->
+        <section class="features-section">
+            <div class="container">
+                <h2 class="section-title">Why <span class="gradient-text">FreelancerHub</span>?</h2>
+                <div class="features-grid">
+                    <div class="feature-card reveal">
+                        <span class="feature-icon">&#128274;</span>
+                        <h3>Escrow Protection</h3>
+                        <p>Smart contract escrow keeps funds locked until work is reviewed and approved by the client.
+                        </p>
+                    </div>
+                    <div class="feature-card reveal">
+                        <span class="feature-icon">&#9889;</span>
+                        <h3>Instant Crypto Payments</h3>
+                        <p>Get paid instantly in ETH. No bank delays, no payment processors, no hidden fees.</p>
+                    </div>
+                    <div class="feature-card reveal">
+                        <span class="feature-icon">&#127760;</span>
+                        <h3>Global Talent Pool</h3>
+                        <p>Access talented professionals from 150+ countries, all verified on the blockchain.</p>
+                    </div>
+                    <div class="feature-card reveal">
+                        <span class="feature-icon">&#128200;</span>
+                        <h3>On-Chain Reputation</h3>
+                        <p>Immutable reviews and reputation scores — impossible to fake, always trustworthy.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ─── FEATURED JOBS ─── -->
+        <section class="jobs-section">
+            <div class="container">
+                <div class="flex-between mb-3">
+                    <h2 class="page-header-title">&#128293; Featured Jobs</h2>
+                    <a href="/jobs.html" class="btn btn-outline btn-sm">View All Jobs →</a>
+                </div>
+                <div class="jobs-grid" id="featuredJobs">
+                    <div class="loading-overlay">
+                        <div class="loading-spinner"></div>
+                        <span>Loading jobs...</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ─── CTA ─── -->
+        <section style="padding:80px 0; position:relative; z-index:1;">
+            <div class="container">
+                <div class="cta-card reveal">
+                    <h2 style="font-size:2.2rem;font-weight:800;margin-bottom:16px;">Ready to get started?</h2>
+                    <p
+                        style="color:var(--text-secondary);margin-bottom:36px;font-size:1rem;max-width:500px;margin-left:auto;margin-right:auto;">
+                        Join thousands of freelancers and clients already using FreelancerHub. Free to join, no
+                        subscription.
+                    </p>
+                    <div class="hero-actions">
+                        <a href="/register.html" class="btn btn-primary btn-lg">&#10024; Create Free Account</a>
+                        <a href="/jobs.html" class="btn btn-secondary btn-lg">Browse Jobs</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div style="display:flex;justify-content:center;align-items:center;gap:8px;margin-bottom:12px;">
+                <div class="logo-icon" style="width:28px;height:28px;font-size:0.8rem;">&#9670;</div>
+                <strong style="font-family:'Space Grotesk',sans-serif;font-size:1.1rem;">FreelancerHub</strong>
+            </div>
+            <p>© 2025 FreelancerHub — Blockchain-Powered Freelancing Platform</p>
+            <div style="margin-top:12px;display:flex;justify-content:center;gap:20px;">
+                <a href="/jobs.html">Jobs</a>
+                <a href="/register.html">Register</a>
+                <a href="/login.html">Sign In</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="/js/config.js"></script>
+    <script src="/js/theme.js"></script>
+    <script src="/js/app.js"></script>
+    <script>
+        loadFeaturedJobs();
+        fetch('/api/stats').then(r => r.json()).then(d => {
+            const s = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+            s('statJobs', d.activeJobs || '0'); s('statFreelancers', d.totalFreelancers || '0');
+            s('statCompleted', d.completedJobs || '0'); s('statUsers', d.totalUsers || '0');
+        }).catch(() => { });
+
+        // Scroll Reveal
+        const obs = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }), { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+        document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+
+        // Ripple
+        document.querySelectorAll('.btn').forEach(btn => {
+            btn.addEventListener('click', function (e) {
+                const r = document.createElement('span'), rect = this.getBoundingClientRect(), sz = Math.max(rect.width, rect.height) * 2;
+                r.className = 'ripple'; r.style.cssText = `width:${sz}px;height:${sz}px;left:${e.clientX - rect.left - sz / 2}px;top:${e.clientY - rect.top - sz / 2}px`;
+                this.appendChild(r); setTimeout(() => r.remove(), 700);
+            });
+        });
+    </script>
+</body>
+
+</html>

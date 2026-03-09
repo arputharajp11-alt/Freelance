@@ -1,0 +1,1303 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="My FreelancerHub profile — edit your details, avatar, skills and wallet.">
+    <title>My Profile — FreelancerHub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/advanced.css">
+    <link rel="stylesheet" href="/css/theme.css">
+    <style>
+        /* ── Profile Page Layout ──────────────────────────────────── */
+        .profile-page {
+            min-height: 100vh;
+            padding: 88px 20px 80px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .profile-container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        /* ── Cover / Banner ───────────────────────────────────────── */
+        .profile-cover {
+            height: 180px;
+            border-radius: 24px 24px 0 0;
+            background: linear-gradient(135deg, #1e0533 0%, #0a1a40 40%, #061730 70%, #0d2614 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .profile-cover::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 60% 80% at 20% 50%, rgba(168, 85, 247, 0.3) 0%, transparent 60%),
+                radial-gradient(ellipse 50% 70% at 80% 30%, rgba(34, 211, 238, 0.2) 0%, transparent 60%),
+                radial-gradient(ellipse 40% 60% at 60% 80%, rgba(16, 185, 129, 0.15) 0%, transparent 60%);
+        }
+
+        .profile-cover::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(168, 85, 247, 0.06) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(168, 85, 247, 0.06) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        /* ── Profile Card ─────────────────────────────────────────── */
+        .profile-card {
+            background: rgba(8, 12, 28, 0.9);
+            backdrop-filter: blur(30px);
+            border: 1px solid rgba(168, 85, 247, 0.15);
+            border-top: none;
+            border-radius: 0 0 24px 24px;
+            padding: 0 36px 36px;
+            position: relative;
+        }
+
+        .profile-card-inner {
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(168, 85, 247, 0.08);
+            animation: fadeUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ── Avatar Section ───────────────────────────────────────── */
+        .avatar-section {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            margin-top: -54px;
+            padding-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 14px;
+        }
+
+        .avatar-wrapper {
+            position: relative;
+            width: 108px;
+            height: 108px;
+            flex-shrink: 0;
+        }
+
+        .profile-avatar-img {
+            width: 108px;
+            height: 108px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid #03060f;
+            background: linear-gradient(135deg, #7c3aed, #06b6d4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.6rem;
+            font-weight: 800;
+            color: white;
+            overflow: hidden;
+        }
+
+        .avatar-initials {
+            width: 108px;
+            height: 108px;
+            border-radius: 50%;
+            border: 4px solid #03060f;
+            background: linear-gradient(135deg, #7c3aed, #06b6d4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.6rem;
+            font-weight: 800;
+            color: white;
+            box-shadow: 0 0 30px rgba(124, 58, 237, 0.5);
+        }
+
+        .avatar-upload-btn {
+            position: absolute;
+            bottom: 4px;
+            right: 4px;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #7c3aed, #06b6d4);
+            border: 2px solid #03060f;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 2px 10px rgba(124, 58, 237, 0.5);
+            z-index: 2;
+        }
+
+        .avatar-upload-btn:hover {
+            transform: scale(1.15);
+            box-shadow: 0 4px 20px rgba(124, 58, 237, 0.7);
+        }
+
+        #avatarInput {
+            display: none;
+        }
+
+        /* Avatar upload progress ring */
+        .avatar-progress {
+            position: absolute;
+            inset: -3px;
+            border-radius: 50%;
+            background: conic-gradient(rgba(124, 58, 237, 0.9) 0%, transparent 0%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .avatar-progress.uploading {
+            opacity: 1;
+        }
+
+        /* ── Avatar Action Buttons ────────────────────────────────── */
+        .avatar-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-left: 4px;
+        }
+
+        .btn-avatar-action {
+            font-size: 0.7rem;
+            padding: 5px 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            background: rgba(168, 85, 247, 0.08);
+            color: #c4b5fd;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .btn-avatar-action:hover {
+            background: rgba(168, 85, 247, 0.18);
+            border-color: rgba(168, 85, 247, 0.6);
+        }
+
+        .btn-avatar-action.danger {
+            border-color: rgba(239, 68, 68, 0.3);
+            background: rgba(239, 68, 68, 0.06);
+            color: #fca5a5;
+        }
+
+        .btn-avatar-action.danger:hover {
+            background: rgba(239, 68, 68, 0.15);
+            border-color: rgba(239, 68, 68, 0.6);
+        }
+
+        .profile-header-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-top: 6px;
+        }
+
+        /* ── Profile Info ─────────────────────────────────────────── */
+        .profile-identity {
+            margin-top: 12px;
+        }
+
+        .profile-role-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .badge-freelancer {
+            background: rgba(16, 185, 129, 0.12);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #34d399;
+        }
+
+        .badge-client {
+            background: rgba(34, 211, 238, 0.1);
+            border: 1px solid rgba(34, 211, 238, 0.3);
+            color: #67e8f9;
+        }
+
+        .profile-name {
+            font-size: 1.9rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            background: linear-gradient(135deg, #fff, #c4b5fd);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 0 0 4px;
+            line-height: 1.2;
+        }
+
+        .profile-title {
+            font-size: 0.95rem;
+            color: rgba(100, 225, 255, 0.8);
+            font-weight: 500;
+            margin: 0 0 12px;
+        }
+
+        .profile-meta-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+            margin-bottom: 16px;
+        }
+
+        .meta-chip {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.81rem;
+            color: rgba(148, 163, 184, 0.75);
+        }
+
+        .meta-chip a {
+            color: rgba(148, 163, 184, 0.75);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .meta-chip a:hover {
+            color: #a855f7;
+        }
+
+        /* ── Verified badge ───────────────────────────────────────── */
+        .verified-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.72rem;
+            padding: 2px 8px;
+            border-radius: 10px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.25);
+            color: #34d399;
+        }
+
+        .profile-bio {
+            font-size: 0.9rem;
+            color: rgba(148, 163, 184, 0.85);
+            line-height: 1.75;
+            margin-bottom: 20px;
+            max-width: 680px;
+        }
+
+        /* ── Stats Row ────────────────────────────────────────────── */
+        .profile-stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+            gap: 14px;
+            margin-bottom: 28px;
+        }
+
+        .p-stat {
+            background: rgba(3, 6, 15, 0.6);
+            border: 1px solid rgba(168, 85, 247, 0.12);
+            border-radius: 16px;
+            padding: 16px;
+            text-align: center;
+            transition: all 0.25s ease;
+        }
+
+        .p-stat:hover {
+            border-color: rgba(168, 85, 247, 0.35);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        }
+
+        .p-stat-value {
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #a855f7, #22d3ee);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.2;
+            margin-bottom: 4px;
+        }
+
+        .p-stat-label {
+            font-size: 0.72rem;
+            color: rgba(100, 116, 139, 0.8);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            font-weight: 600;
+        }
+
+        /* ── Skills ───────────────────────────────────────────────── */
+        .section-heading {
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.09em;
+            text-transform: uppercase;
+            color: rgba(168, 85, 247, 0.75);
+            margin: 0 0 12px;
+        }
+
+        .skills-wrap {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+
+        .skill-tag {
+            padding: 5px 13px;
+            border-radius: 20px;
+            background: rgba(168, 85, 247, 0.1);
+            border: 1px solid rgba(168, 85, 247, 0.25);
+            color: #c4b5fd;
+            font-size: 0.8rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .skill-tag:hover {
+            background: rgba(168, 85, 247, 0.2);
+            box-shadow: 0 0 12px rgba(168, 85, 247, 0.2);
+        }
+
+        /* ── Wallet row ───────────────────────────────────────────── */
+        .wallet-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            background: rgba(3, 6, 15, 0.5);
+            border: 1px solid rgba(168, 85, 247, 0.12);
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
+
+        .wallet-address {
+            font-family: 'Courier New', monospace;
+            font-size: 0.82rem;
+            color: rgba(100, 216, 255, 0.85);
+            word-break: break-all;
+        }
+
+        /* ── Divider ──────────────────────────────────────────────── */
+        .section-divider {
+            height: 1px;
+            background: rgba(168, 85, 247, 0.1);
+            margin: 28px 0;
+        }
+
+        /* ── Edit Panel ───────────────────────────────────────────── */
+        .edit-panel {
+            background: rgba(4, 7, 18, 0.8);
+            border: 1px solid rgba(168, 85, 247, 0.18);
+            border-radius: 24px;
+            padding: 36px;
+            margin-top: 24px;
+            display: none;
+            animation: panelIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+
+        @keyframes panelIn {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .edit-panel.open {
+            display: block;
+        }
+
+        .edit-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 28px;
+        }
+
+        .edit-panel-title {
+            font-size: 1.15rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #fff 0%, #c4b5fd 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 0;
+        }
+
+        /* ── Edit Form Grid ───────────────────────────────────────── */
+        .edit-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+        }
+
+        .edit-grid .full-width {
+            grid-column: 1 / -1;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-label {
+            font-size: 0.71rem;
+            font-weight: 700;
+            letter-spacing: 0.09em;
+            text-transform: uppercase;
+            color: rgba(168, 85, 247, 0.85);
+        }
+
+        .input-with-icon {
+            position: relative;
+        }
+
+        .field-icon {
+            position: absolute;
+            left: 13px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.9rem;
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .form-input,
+        .form-textarea,
+        .form-select {
+            background: rgba(3, 6, 15, 0.7) !important;
+            border: 1.5px solid rgba(168, 85, 247, 0.15) !important;
+            border-radius: 12px !important;
+            padding: 11px 14px 11px 38px !important;
+            font-size: 0.88rem !important;
+            color: #e2e8f0 !important;
+            transition: all 0.2s ease !important;
+            outline: none;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .form-input.no-icon,
+        .form-textarea.no-icon {
+            padding-left: 14px !important;
+        }
+
+        .form-input:focus,
+        .form-textarea:focus,
+        .form-select:focus {
+            border-color: rgba(124, 58, 237, 0.6) !important;
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12) !important;
+            background: rgba(3, 6, 15, 0.9) !important;
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 90px;
+            padding-top: 11px !important;
+        }
+
+        .char-count {
+            text-align: right;
+            font-size: 0.68rem;
+            color: rgba(100, 116, 139, 0.6);
+        }
+
+        /* ── Skills Tag Input ─────────────────────────────────────── */
+        .skills-tag-input {
+            min-height: 46px;
+            background: rgba(3, 6, 15, 0.7) !important;
+            border: 1.5px solid rgba(168, 85, 247, 0.15);
+            border-radius: 12px;
+            padding: 8px 12px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            align-items: center;
+            cursor: text;
+            transition: all 0.2s ease;
+        }
+
+        .skills-tag-input:focus-within {
+            border-color: rgba(124, 58, 237, 0.6);
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
+        }
+
+        .skill-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            background: rgba(168, 85, 247, 0.15);
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            color: #c4b5fd;
+            font-size: 0.78rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .skill-chip .remove-skill {
+            cursor: pointer;
+            font-size: 0.7rem;
+            opacity: 0.6;
+            transition: opacity 0.15s;
+            line-height: 1;
+        }
+
+        .skill-chip .remove-skill:hover {
+            opacity: 1;
+            color: #f87171;
+        }
+
+        #skillsInput {
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #e2e8f0;
+            font-size: 0.85rem;
+            min-width: 120px;
+            flex: 1;
+        }
+
+        /* ── Form Actions ─────────────────────────────────────────── */
+        .edit-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .btn-save {
+            flex: 1;
+            padding: 13px 24px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #7c3aed, #06b6d4);
+            color: white;
+            font-size: 0.9rem;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 4px 20px rgba(124, 58, 237, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-save:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(124, 58, 237, 0.6);
+        }
+
+        .btn-save:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+        }
+
+        .btn-cancel {
+            padding: 13px 20px;
+            border-radius: 14px;
+            background: rgba(168, 85, 247, 0.07);
+            border: 1.5px solid rgba(168, 85, 247, 0.2);
+            color: #a78bfa;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-cancel:hover {
+            background: rgba(168, 85, 247, 0.15);
+            border-color: rgba(168, 85, 247, 0.5);
+        }
+
+        /* ── Upload overlay overlay ───────────────────────────────── */
+        .avatar-upload-overlay {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.25s ease;
+            cursor: pointer;
+            font-size: 0.65rem;
+            color: white;
+            gap: 2px;
+        }
+
+        .avatar-wrapper:hover .avatar-upload-overlay {
+            opacity: 1;
+        }
+
+        /* ── Info Section (links, wallet) ─────────────────────────── */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 11px 14px;
+            background: rgba(3, 6, 15, 0.5);
+            border: 1px solid rgba(168, 85, 247, 0.1);
+            border-radius: 12px;
+            font-size: 0.83rem;
+            color: rgba(148, 163, 184, 0.8);
+            min-width: 0;
+        }
+
+        .info-item .info-icon {
+            opacity: 0.6;
+            flex-shrink: 0;
+        }
+
+        .info-item a {
+            color: rgba(148, 163, 184, 0.8);
+            text-decoration: none;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            transition: color 0.2s;
+        }
+
+        .info-item a:hover {
+            color: #a855f7;
+        }
+
+        /* ── Empty state ──────────────────────────────────────────── */
+        .empty-bio {
+            font-style: italic;
+            color: rgba(100, 116, 139, 0.5);
+        }
+
+        /* ── Responsive ───────────────────────────────────────────── */
+        @media (max-width: 640px) {
+            .profile-card {
+                padding: 0 20px 28px;
+            }
+
+            .edit-panel {
+                padding: 24px 20px;
+            }
+
+            .edit-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .profile-name {
+                font-size: 1.5rem;
+            }
+
+            .avatar-section {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- ─── NAVBAR ─── -->
+    <nav class="navbar">
+        <a href="/" class="navbar-brand">
+            <div class="logo-icon">&#9670;</div><span>FreelancerHub</span>
+        </a>
+        <ul class="navbar-links" id="navLinks">
+            <li><a href="/jobs.html">&#128188; Jobs</a></li>
+            <li><a href="/dashboard.html">&#128202; Dashboard</a></li>
+            <li><a href="/chat.html">&#128172; Chat</a></li>
+            <li><a href="/notifications.html">&#128276; Alerts</a></li>
+        </ul>
+        <div class="navbar-right">
+            <a href="/login.html" class="btn btn-outline btn-sm" id="navLogin" style="display:none;">Sign In</a>
+            <a href="/register.html" class="btn btn-primary btn-sm" id="navRegister" style="display:none;">Get
+                Started</a>
+            <div class="nav-dropdown" id="navUser">
+                <div class="nav-avatar" id="navAvatar" onclick="toggleDropdown()">U</div>
+                <div class="nav-dropdown-menu" id="navDropdown">
+                    <a href="/profile.html" class="active">&#128100; Profile</a>
+                    <a href="/dashboard.html">&#128202; Dashboard</a>
+                    <a href="/wallet.html">&#128176; Wallet</a>
+                    <div class="nav-dropdown-divider"></div>
+                    <a href="#" onclick="logout();return false;" style="color:var(--error);">&#128682; Sign Out</a>
+                </div>
+            </div>
+            <button class="nav-toggle" onclick="toggleNav()">&#9776;</button>
+        </div>
+    </nav>
+
+    <div class="toast-container" id="toastContainer"></div>
+    <div class="orb-mid"></div>
+
+    <!-- ─── HIDDEN FILE INPUT ─── -->
+    <input type="file" id="avatarInput" accept="image/jpeg,image/png,image/webp,image/gif">
+
+    <main class="profile-page">
+        <div class="profile-container">
+
+            <!-- Profile Card Wrapper -->
+            <div class="profile-card-inner" id="profileCardInner">
+
+                <!-- Cover Banner -->
+                <div class="profile-cover" id="profileCover"></div>
+
+                <!-- Card body -->
+                <div class="profile-card" id="profileCard">
+
+                    <!-- Avatar + Actions Row -->
+                    <div class="avatar-section">
+                        <div style="display:flex;align-items:flex-end;gap:14px;">
+                            <!-- Avatar -->
+                            <div class="avatar-wrapper" id="avatarWrapper" title="Click to change photo">
+                                <div class="avatar-initials" id="avatarDisplay">?</div>
+                                <div class="avatar-upload-overlay"
+                                    onclick="document.getElementById('avatarInput').click()">
+                                    <span style="font-size:1.2rem;">📷</span>
+                                    <span>Change</span>
+                                </div>
+                                <div class="avatar-progress" id="avatarProgress"></div>
+                                <div class="avatar-upload-btn" onclick="document.getElementById('avatarInput').click()"
+                                    title="Change profile photo">
+                                    📷
+                                </div>
+                            </div>
+                            <!-- Avatar sub-actions -->
+                            <div class="avatar-actions" id="avatarActions" style="margin-bottom:6px;">
+                                <button class="btn-avatar-action"
+                                    onclick="document.getElementById('avatarInput').click()">⬆ Upload Photo</button>
+                                <button class="btn-avatar-action danger" id="removeAvatarBtn" onclick="removeAvatar()"
+                                    style="display:none;">✕ Remove</button>
+                            </div>
+                        </div>
+
+                        <!-- Edit / Share buttons -->
+                        <div class="profile-header-actions">
+                            <button class="btn btn-outline btn-sm" onclick="toggleEdit()" id="editToggleBtn">✏️ Edit
+                                Profile</button>
+                            <a href="/dashboard.html" class="btn btn-primary btn-sm">📊 Dashboard</a>
+                        </div>
+                    </div>
+
+                    <!-- Profile Identity -->
+                    <div class="profile-identity">
+                        <div id="profileRoleBadge" class="profile-role-badge badge-freelancer">🧑‍💻 Freelancer</div>
+                        <h1 class="profile-name" id="profileName">Loading...</h1>
+                        <p class="profile-title" id="profileTitle" style="display:none;"></p>
+
+                        <!-- Meta Row: email, location, website -->
+                        <div class="profile-meta-row" id="profileMetaRow">
+                            <span class="meta-chip" id="metaEmail">
+                                <span>✉️</span>
+                                <span id="metaEmailTxt">—</span>
+                            </span>
+                        </div>
+
+                        <!-- Bio -->
+                        <p class="profile-bio" id="profileBio"></p>
+
+                        <!-- Verified badge -->
+                        <div id="verifiedBadge" style="margin-bottom:16px;display:none;">
+                            <span class="verified-chip">✅ Email Verified</span>
+                        </div>
+                    </div>
+
+                    <!-- Stats -->
+                    <div class="profile-stats-row" id="profileStatsRow">
+                        <!-- populated by JS -->
+                    </div>
+
+                    <!-- Skills -->
+                    <div id="skillsSection" style="display:none;">
+                        <div class="section-divider"></div>
+                        <p class="section-heading">Skills</p>
+                        <div class="skills-wrap" id="skillsWrap"></div>
+                    </div>
+
+                    <!-- Info Grid (location, links, wallet) -->
+                    <div class="info-grid" id="infoGrid" style="display:none;"></div>
+
+                </div>
+            </div><!-- /profile-card-inner -->
+
+            <!-- ── Edit Panel ─────────────────────────────────────── -->
+            <div class="edit-panel" id="editPanel">
+                <div class="edit-panel-header">
+                    <h2 class="edit-panel-title">✏️ Edit Your Profile</h2>
+                    <button class="btn-cancel" onclick="toggleEdit()">✕ Close</button>
+                </div>
+
+                <form id="editProfileForm" onsubmit="saveProfile(event)">
+                    <div class="edit-grid">
+
+                        <!-- Full Name -->
+                        <div class="form-group">
+                            <label class="form-label" for="editName">Full Name</label>
+                            <div class="input-with-icon">
+                                <span class="field-icon">👤</span>
+                                <input type="text" class="form-input" id="editName" placeholder="Your full name"
+                                    maxlength="80">
+                            </div>
+                        </div>
+
+                        <!-- Professional Title -->
+                        <div class="form-group">
+                            <label class="form-label" for="editTitle">Professional Title</label>
+                            <div class="input-with-icon">
+                                <span class="field-icon">💼</span>
+                                <input type="text" class="form-input" id="editTitle"
+                                    placeholder="e.g. Full-Stack Developer" maxlength="80">
+                            </div>
+                        </div>
+
+                        <!-- Bio (full width) -->
+                        <div class="form-group full-width">
+                            <label class="form-label" for="editBio">Bio</label>
+                            <textarea class="form-textarea no-icon" id="editBio"
+                                placeholder="Tell clients about your experience, skills, and what makes you great..."
+                                maxlength="500" oninput="updateCharCount(this, 'bioCount', 500)"></textarea>
+                            <div class="char-count"><span id="bioCount">0</span>/500</div>
+                        </div>
+
+                        <!-- Location -->
+                        <div class="form-group">
+                            <label class="form-label" for="editLocation">Location</label>
+                            <div class="input-with-icon">
+                                <span class="field-icon">📍</span>
+                                <input type="text" class="form-input" id="editLocation" placeholder="City, Country"
+                                    maxlength="80">
+                            </div>
+                        </div>
+
+                        <!-- Hourly Rate -->
+                        <div class="form-group" id="rateGroup">
+                            <label class="form-label" for="editRate">Hourly Rate (ETH)</label>
+                            <div class="input-with-icon">
+                                <span class="field-icon">💰</span>
+                                <input type="number" class="form-input" id="editRate" step="0.001" min="0"
+                                    placeholder="0.010">
+                            </div>
+                        </div>
+
+                        <!-- Skills -->
+                        <div class="form-group full-width">
+                            <label class="form-label">Skills</label>
+                            <div class="skills-tag-input" id="skillsTagInput"
+                                onclick="document.getElementById('skillsInput').focus()">
+                                <!-- chips inserted here -->
+                                <input type="text" id="skillsInput" placeholder="Type a skill and press Enter…"
+                                    autocomplete="off">
+                            </div>
+                            <div style="font-size:0.71rem;color:rgba(100,116,139,0.6);margin-top:4px;">Press Enter or
+                                comma to add a skill</div>
+                        </div>
+
+                        <!-- Website -->
+                        <div class="form-group">
+                            <label class="form-label" for="editWebsite">Website</label>
+                            <div class="input-with-icon">
+                                <span class="field-icon">🌐</span>
+                                <input type="url" class="form-input" id="editWebsite"
+                                    placeholder="https://yoursite.com">
+                            </div>
+                        </div>
+
+                        <!-- GitHub -->
+                        <div class="form-group">
+                            <label class="form-label" for="editGithub">GitHub</label>
+                            <div class="input-with-icon">
+                                <span class="field-icon">🐙</span>
+                                <input type="text" class="form-input" id="editGithub" placeholder="@username">
+                            </div>
+                        </div>
+
+                        <!-- ETH Wallet -->
+                        <div class="form-group full-width">
+                            <label class="form-label" for="editWallet">ETH Wallet Address</label>
+                            <div class="input-with-icon">
+                                <span class="field-icon">🔑</span>
+                                <input type="text" class="form-input" id="editWallet" placeholder="0x...">
+                            </div>
+                        </div>
+
+                    </div><!-- /edit-grid -->
+
+                    <div class="edit-actions">
+                        <button type="submit" class="btn-save" id="saveBtn">
+                            <span id="saveBtnText">💾 Save Changes</span>
+                        </button>
+                        <button type="button" class="btn-cancel" onclick="toggleEdit()">Cancel</button>
+                    </div>
+
+                </form>
+            </div><!-- /edit-panel -->
+
+        </div><!-- /profile-container -->
+    </main>
+
+    <script src="/js/config.js"></script>
+    <script src="/js/theme.js"></script>
+    <script src="/js/app.js"></script>
+    <script>
+        requireAuth();
+
+        let currentSkills = [];
+
+        // ── Init ──────────────────────────────────────────────────
+        document.addEventListener('DOMContentLoaded', () => {
+            renderProfile();
+            initAvatarUpload();
+            initSkillsInput();
+        });
+
+        // ── Render Profile from localStorage ──────────────────────
+        function renderProfile() {
+            const user = getUser();
+            if (!user) { location.href = '/login.html'; return; }
+
+            // Refresh from server
+            apiFetch('/auth/me').then(d => {
+                if (d && d.user) { setUser(d.user); renderProfileUI(d.user); }
+            }).catch(() => renderProfileUI(user));
+
+            renderProfileUI(user);
+        }
+
+        function renderProfileUI(user) {
+            // Avatar
+            const avatarEl = document.getElementById('avatarDisplay');
+            const initial = (user.full_name || user.email || 'U').charAt(0).toUpperCase();
+            if (user.avatar) {
+                avatarEl.innerHTML = `<img src="${user.avatar}" alt="${escapeHtml(user.full_name)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+                document.getElementById('removeAvatarBtn').style.display = '';
+            } else {
+                avatarEl.textContent = initial;
+                avatarEl.style.background = 'linear-gradient(135deg, #7c3aed, #06b6d4)';
+                document.getElementById('removeAvatarBtn').style.display = 'none';
+            }
+
+            // Nav avatar
+            const navAvatar = document.getElementById('navAvatar');
+            if (navAvatar) navAvatar.textContent = initial;
+
+            // Role badge
+            const roleBadge = document.getElementById('profileRoleBadge');
+            if (user.role === 'client') {
+                roleBadge.className = 'profile-role-badge badge-client';
+                roleBadge.innerHTML = '🏢 Client';
+            } else {
+                roleBadge.className = 'profile-role-badge badge-freelancer';
+                roleBadge.innerHTML = '🧑‍💻 Freelancer';
+            }
+
+            // Name
+            document.getElementById('profileName').textContent = user.full_name || 'Anonymous';
+
+            // Title
+            const titleEl = document.getElementById('profileTitle');
+            if (user.title) { titleEl.textContent = user.title; titleEl.style.display = ''; }
+            else titleEl.style.display = 'none';
+
+            // Bio
+            const bioEl = document.getElementById('profileBio');
+            if (user.bio) {
+                bioEl.textContent = user.bio;
+                bioEl.classList.remove('empty-bio');
+            } else {
+                bioEl.textContent = 'No bio yet. Click "Edit Profile" to add one.';
+                bioEl.classList.add('empty-bio');
+            }
+
+            // Email meta
+            document.getElementById('metaEmailTxt').textContent = user.email;
+
+            // Meta row
+            const metaRow = document.getElementById('profileMetaRow');
+            let metaHTML = `<span class="meta-chip"><span>✉️</span><span>${escapeHtml(user.email)}</span></span>`;
+            if (user.location) metaHTML += `<span class="meta-chip"><span>📍</span><span>${escapeHtml(user.location)}</span></span>`;
+            if (user.role === 'freelancer' && user.hourly_rate) metaHTML += `<span class="meta-chip"><span>💰</span><span>${user.hourly_rate} ETH/hr</span></span>`;
+            metaRow.innerHTML = metaHTML;
+
+            // Verified
+            if (user.is_verified) document.getElementById('verifiedBadge').style.display = '';
+
+            // Stats
+            const statsRow = document.getElementById('profileStatsRow');
+            const statsData = [
+                { value: '⭐ ' + parseFloat(user.rating || 0).toFixed(1), label: 'Rating' },
+                { value: user.total_reviews || 0, label: 'Reviews' },
+                { value: (parseFloat(user.role === 'client' ? (user.total_spent || 0) : (user.total_earnings || 0)).toFixed(3)) + ' ETH', label: user.role === 'client' ? 'Spent' : 'Earned' },
+            ];
+            if (user.role === 'freelancer' && user.hourly_rate) {
+                statsData.push({ value: user.hourly_rate + ' ETH', label: 'Hourly Rate' });
+            }
+            statsRow.innerHTML = statsData.map(s => `
+                <div class="p-stat">
+                    <div class="p-stat-value">${s.value}</div>
+                    <div class="p-stat-label">${s.label}</div>
+                </div>`).join('');
+
+            // Skills
+            const skillsSection = document.getElementById('skillsSection');
+            const skillsWrap = document.getElementById('skillsWrap');
+            if (user.skills && user.skills.length) {
+                skillsSection.style.display = '';
+                skillsWrap.innerHTML = user.skills.map(s => `<span class="skill-tag">${escapeHtml(s)}</span>`).join('');
+            } else {
+                skillsSection.style.display = 'none';
+            }
+
+            // Info Grid (links, wallet)
+            const infoGrid = document.getElementById('infoGrid');
+            let infoItems = [];
+            if (user.website) infoItems.push(`<div class="info-item"><span class="info-icon">🌐</span><a href="${escapeHtml(user.website)}" target="_blank" rel="noopener">${escapeHtml(user.website)}</a></div>`);
+            if (user.github) infoItems.push(`<div class="info-item"><span class="info-icon">🐙</span><a href="https://github.com/${escapeHtml(user.github)}" target="_blank" rel="noopener">github.com/${escapeHtml(user.github)}</a></div>`);
+            if (user.wallet_address) infoItems.push(`<div class="info-item"><span class="info-icon">🔑</span><span class="wallet-address">${user.wallet_address.slice(0, 10)}…${user.wallet_address.slice(-6)}</span></div>`);
+            if (infoItems.length) { infoGrid.style.display = 'grid'; infoGrid.innerHTML = infoItems.join(''); }
+            else infoGrid.style.display = 'none';
+        }
+
+        // ── Toggle Edit Panel ──────────────────────────────────────
+        function toggleEdit() {
+            const panel = document.getElementById('editPanel');
+            const btn = document.getElementById('editToggleBtn');
+            const isOpen = panel.classList.contains('open');
+
+            if (!isOpen) {
+                const user = getUser();
+                if (!user) return;
+                // Populate fields
+                document.getElementById('editName').value = user.full_name || '';
+                document.getElementById('editTitle').value = user.title || '';
+                const bioEl = document.getElementById('editBio');
+                bioEl.value = user.bio || '';
+                updateCharCount(bioEl, 'bioCount', 500);
+                document.getElementById('editLocation').value = user.location || '';
+                document.getElementById('editRate').value = user.hourly_rate || '';
+                document.getElementById('editWebsite').value = user.website || '';
+                document.getElementById('editGithub').value = user.github || '';
+                document.getElementById('editWallet').value = user.wallet_address || '';
+                // Skills
+                currentSkills = [...(user.skills || [])];
+                renderSkillChips();
+                // Hide rate for client
+                document.getElementById('rateGroup').style.display = user.role === 'freelancer' ? '' : 'none';
+                panel.classList.add('open');
+                btn.textContent = '✕ Close Edit';
+                panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } else {
+                panel.classList.remove('open');
+                btn.textContent = '✏️ Edit Profile';
+            }
+        }
+
+        // ── Save Profile ───────────────────────────────────────────
+        async function saveProfile(e) {
+            e.preventDefault();
+            const btn = document.getElementById('saveBtn');
+            const btnText = document.getElementById('saveBtnText');
+            btn.disabled = true;
+            btnText.textContent = '💾 Saving…';
+
+            try {
+                const data = await apiFetch('/auth/profile', {
+                    method: 'PUT',
+                    body: JSON.stringify({
+                        full_name: document.getElementById('editName').value.trim(),
+                        title: document.getElementById('editTitle').value.trim(),
+                        bio: document.getElementById('editBio').value.trim(),
+                        location: document.getElementById('editLocation').value.trim(),
+                        skills: currentSkills,
+                        hourly_rate: parseFloat(document.getElementById('editRate').value) || 0,
+                        website: document.getElementById('editWebsite').value.trim(),
+                        github: document.getElementById('editGithub').value.trim().replace(/^@/, ''),
+                        wallet_address: document.getElementById('editWallet').value.trim()
+                    })
+                });
+                setUser(data.user);
+                showToast('✅ Profile saved successfully!', 'success');
+                document.getElementById('editPanel').classList.remove('open');
+                document.getElementById('editToggleBtn').textContent = '✏️ Edit Profile';
+                renderProfileUI(data.user);
+            } catch (err) {
+                showToast(err.message || 'Update failed', 'error');
+            } finally {
+                btn.disabled = false;
+                btnText.textContent = '💾 Save Changes';
+            }
+        }
+
+        // ── Avatar Upload ──────────────────────────────────────────
+        function initAvatarUpload() {
+            const input = document.getElementById('avatarInput');
+            input.addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                if (file.size > 5 * 1024 * 1024) {
+                    showToast('Image must be smaller than 5 MB', 'error');
+                    return;
+                }
+
+                // Show loading
+                const avatarEl = document.getElementById('avatarDisplay');
+                const progressRing = document.getElementById('avatarProgress');
+                progressRing.classList.add('uploading');
+
+                // Optimistic preview
+                const reader = new FileReader();
+                reader.onload = ev => {
+                    avatarEl.innerHTML = `<img src="${ev.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+                };
+                reader.readAsDataURL(file);
+
+                try {
+                    const formData = new FormData();
+                    formData.append('avatar', file);
+
+                    const token = getToken();
+                    const resp = await fetch(`${API_BASE}/auth/avatar`, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${token}` },
+                        body: formData
+                    });
+                    const data = await resp.json();
+                    if (!resp.ok) throw new Error(data.error || 'Upload failed');
+
+                    setUser(data.user);
+                    showToast('🎉 Profile photo updated!', 'success');
+                    document.getElementById('removeAvatarBtn').style.display = '';
+
+                    // Update nav avatar
+                    const navAvatar = document.getElementById('navAvatar');
+                    if (navAvatar) navAvatar.textContent = (data.user.full_name || 'U').charAt(0).toUpperCase();
+
+                } catch (err) {
+                    showToast(err.message || 'Failed to upload photo', 'error');
+                    // Revert preview
+                    renderProfileUI(getUser());
+                } finally {
+                    progressRing.classList.remove('uploading');
+                    input.value = '';
+                }
+            });
+        }
+
+        async function removeAvatar() {
+            if (!confirm('Remove your profile photo?')) return;
+            try {
+                const token = getToken();
+                const resp = await fetch(`${API_BASE}/auth/avatar`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!resp.ok) throw new Error('Failed');
+                // Fetch updated user
+                const d = await apiFetch('/auth/me');
+                if (d && d.user) { setUser(d.user); renderProfileUI(d.user); }
+                showToast('Profile photo removed', 'info');
+                document.getElementById('removeAvatarBtn').style.display = 'none';
+            } catch (err) {
+                showToast('Could not remove photo', 'error');
+            }
+        }
+
+        // ── Skills Tag Input ───────────────────────────────────────
+        function initSkillsInput() {
+            const input = document.getElementById('skillsInput');
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ',') {
+                    e.preventDefault();
+                    const val = input.value.trim().replace(/,$/, '');
+                    addSkill(val);
+                    input.value = '';
+                } else if (e.key === 'Backspace' && !input.value && currentSkills.length) {
+                    currentSkills.pop();
+                    renderSkillChips();
+                }
+            });
+            input.addEventListener('blur', () => {
+                const val = input.value.trim();
+                if (val) { addSkill(val); input.value = ''; }
+            });
+        }
+
+        function addSkill(val) {
+            if (!val || val.length < 1) return;
+            const cleaned = val.slice(0, 30);
+            if (!currentSkills.includes(cleaned) && currentSkills.length < 20) {
+                currentSkills.push(cleaned);
+                renderSkillChips();
+            }
+        }
+
+        function removeSkill(idx) {
+            currentSkills.splice(idx, 1);
+            renderSkillChips();
+        }
+
+        function renderSkillChips() {
+            const container = document.getElementById('skillsTagInput');
+            const input = document.getElementById('skillsInput');
+            // Remove old chips
+            container.querySelectorAll('.skill-chip').forEach(c => c.remove());
+            // Add chips before the input
+            currentSkills.forEach((s, i) => {
+                const chip = document.createElement('span');
+                chip.className = 'skill-chip';
+                chip.innerHTML = `${escapeHtml(s)} <span class="remove-skill" onclick="removeSkill(${i})">✕</span>`;
+                container.insertBefore(chip, input);
+            });
+        }
+
+        // ── Char Counter ───────────────────────────────────────────
+        function updateCharCount(el, countId, max) {
+            const cnt = document.getElementById(countId);
+            if (cnt) cnt.textContent = el.value.length;
+        }
+    </script>
+</body>
+
+</html>

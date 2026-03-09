@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Sign in to FreelancerHub — the blockchain-powered freelance marketplace.">
+    <title>Sign In — FreelancerHub</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/advanced.css">
+    <link rel="stylesheet" href="/css/theme.css">
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <a href="/" class="navbar-brand">
+            <div class="logo-icon">&#9670;</div>
+            <span>FreelancerHub</span>
+        </a>
+        <div class="navbar-right">
+            <a href="/login.html" class="btn btn-outline btn-sm" id="navLogin">Sign In</a>
+            <a href="/register.html" class="btn btn-primary btn-sm" id="navRegister">Get Started</a>
+        </div>
+    </nav>
+
+    <div class="toast-container" id="toastContainer"></div>
+    <div class="orb-mid"></div>
+
+    <main class="main-content">
+        <div class="auth-page">
+            <div class="auth-card">
+
+                <div style="text-align:center;margin-bottom:28px;">
+                    <div class="logo-icon" style="width:56px;height:56px;font-size:1.6rem;margin:0 auto 20px;">&#9670;
+                    </div>
+                    <h1 style="font-size:2rem;">Welcome Back</h1>
+                    <p class="subtitle">Sign in to continue to FreelancerHub</p>
+                </div>
+
+                <form id="loginForm" onsubmit="handleLogin(event)" novalidate>
+
+                    <div class="form-group">
+                        <label class="form-label" for="loginEmail">Email Address</label>
+                        <input type="email" class="form-input" id="loginEmail" placeholder="you@example.com" required
+                            autocomplete="email">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="loginPassword">Password</label>
+                        <input type="password" class="form-input" id="loginPassword" placeholder="Your password"
+                            required autocomplete="current-password">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block btn-lg" id="loginSubmit"
+                        style="margin-top:8px;">
+                        &#128274; Sign In
+                    </button>
+                </form>
+
+                <div class="divider"></div>
+
+                <p style="text-align:center;color:var(--text-secondary);font-size:0.875rem;">
+                    Don't have an account?
+                    <a href="/register.html" style="color:#22d3ee;font-weight:700;">Create one free &#8594;</a>
+                </p>
+                <div
+                    style="margin-top:28px;padding:16px;background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.15);border-radius:14px;text-align:center;">
+                    <p style="font-size:0.78rem;color:var(--text-muted);margin:0;">&#128274; Secured by blockchain
+                        technology &nbsp;·&nbsp; &#127760; 150+ countries &nbsp;·&nbsp; &#9889; Instant ETH payments</p>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <script src="/js/config.js"></script>
+    <script src="/js/theme.js"></script>
+    <script src="/js/app.js"></script>
+    <script>
+        if (isLoggedIn()) location.href = '/dashboard.html';
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            if (!email || !password) { showToast('Please fill in all fields', 'error'); return; }
+            login(email, password);
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Your FreelancerHub dashboard — manage jobs, proposals, and earnings.">
+    <title>Dashboard — FreelancerHub</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/advanced.css">
+    <link rel="stylesheet" href="/css/theme.css">
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <a href="/" class="navbar-brand">
+            <div class="logo-icon">&#9670;</div>
+            <span>FreelancerHub</span>
+        </a>
+        <ul class="navbar-links" id="navLinks">
+            <li><a href="/jobs.html">&#128188; Jobs</a></li>
+            <li><a href="/dashboard.html" class="active">&#128202; Dashboard</a></li>
+            <li><a href="/chat.html">&#128172; Chat <span class="nav-badge hidden" id="chat-badge">0</span></a></li>
+            <li><a href="/notifications.html">&#128276; <span class="nav-badge hidden" id="notif-badge">0</span></a>
+            </li>
+        </ul>
+        <div class="navbar-right">
+            <a href="/login.html" class="btn btn-outline btn-sm" id="navLogin" style="display:none;">Sign In</a>
+            <a href="/register.html" class="btn btn-primary btn-sm" id="navRegister" style="display:none;">Get
+                Started</a>
+            <div class="nav-dropdown" id="navUser">
+                <div class="nav-avatar" id="navAvatar" onclick="toggleDropdown()">U</div>
+                <div class="nav-dropdown-menu" id="navDropdown">
+                    <a href="/profile.html">&#128100; Profile</a>
+                    <a href="/dashboard.html">&#128202; Dashboard</a>
+                    <a href="/wallet.html">&#128176; Wallet</a>
+                    <div class="nav-dropdown-divider"></div>
+                    <a href="#" onclick="logout();return false;" style="color:var(--error);">&#128682; Sign Out</a>
+                </div>
+            </div>
+            <button class="nav-toggle" onclick="toggleNav()">&#9776;</button>
+        </div>
+    </nav>
+
+    <div class="toast-container" id="toastContainer"></div>
+    <div class="orb-mid"></div>
+
+    <main class="main-content">
+        <div class="container">
+
+            <!-- Header -->
+            <div class="dashboard-header">
+                <div>
+                    <h1 class="dashboard-title">Dashboard</h1>
+                    <p class="dashboard-welcome" id="dashWelcome">Welcome back!</p>
+                </div>
+                <div class="dashboard-actions">
+                    <a href="/post-job.html" class="btn btn-primary" id="postJobBtn" style="display:none;">
+                        &#43; Post a Job
+                    </a>
+                    <a href="/jobs.html" class="btn btn-secondary" id="findJobBtn" style="display:none;">
+                        &#128269; Find Jobs
+                    </a>
+                </div>
+            </div>
+
+            <!-- Stat Cards -->
+            <div class="dash-stats" id="dashStats">
+                <div class="dash-stat">
+                    <div class="dash-stat-icon purple">&#128188;</div>
+                    <div>
+                        <div class="dash-stat-value" id="ds1">—</div>
+                        <div class="dash-stat-label" id="dl1">Active Jobs</div>
+                    </div>
+                </div>
+                <div class="dash-stat">
+                    <div class="dash-stat-icon cyan">&#128221;</div>
+                    <div>
+                        <div class="dash-stat-value" id="ds2">—</div>
+                        <div class="dash-stat-label" id="dl2">Proposals</div>
+                    </div>
+                </div>
+                <div class="dash-stat">
+                    <div class="dash-stat-icon green">&#128176;</div>
+                    <div>
+                        <div class="dash-stat-value" id="ds3">—</div>
+                        <div class="dash-stat-label" id="dl3">Earnings</div>
+                    </div>
+                </div>
+                <div class="dash-stat">
+                    <div class="dash-stat-icon amber">&#9989;</div>
+                    <div>
+                        <div class="dash-stat-value" id="ds4">—</div>
+                        <div class="dash-stat-label" id="dl4">Completed</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="tab-group">
+                <button class="tab-btn active" id="tabJobs" onclick="switchTab('jobs', this)">
+                    &#128188; My Jobs
+                </button>
+                <button class="tab-btn" id="tabProposals" onclick="switchTab('proposals', this)">
+                    &#128221; Proposals
+                </button>
+            </div>
+
+            <!-- Tab Content -->
+            <div id="tabContent" class="tab-content">
+                <div class="loading-overlay">
+                    <div class="loading-spinner"></div>
+                    <span>Loading your jobs...</span>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>© 2025 FreelancerHub. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="/js/config.js"></script>
+    <script src="/js/theme.js"></script>
+    <script src="/js/app.js"></script>
+    <script>
+        requireAuth();
+        loadDashboard();
+
+        async function loadStats() {
+            const user = getUser();
+            if (!user) return;
+            try {
+                if (user.role === 'client') {
+                    const data = await apiFetch('/jobs/my/posted');
+                    const jobs = data?.jobs || [];
+                    const active = jobs.filter(j => ['open', 'in_progress'].includes(j.status)).length;
+                    const completed = jobs.filter(j => j.status === 'completed').length;
+                    const proposals = jobs.reduce((s, j) => s + (parseInt(j.proposal_count) || 0), 0);
+
+                    document.getElementById('ds1').textContent = active;
+                    document.getElementById('ds2').textContent = proposals;
+                    document.getElementById('ds3').textContent = (user.total_spent || 0) + ' ETH';
+                    document.getElementById('ds4').textContent = completed;
+                    document.getElementById('dl3').textContent = 'Total Spent';
+                } else {
+                    const data = await apiFetch('/jobs/my/applied');
+                    const jobs = data?.jobs || [];
+                    const active = jobs.filter(j => j.status === 'in_progress').length;
+                    const completed = jobs.filter(j => j.status === 'completed').length;
+
+                    document.getElementById('ds1').textContent = active;
+                    document.getElementById('ds2').textContent = jobs.length;
+                    document.getElementById('ds3').textContent = (user.total_earnings || 0) + ' ETH';
+                    document.getElementById('ds4').textContent = completed;
+                    document.getElementById('dl1').textContent = 'Active Projects';
+                    document.getElementById('dl3').textContent = 'Total Earned';
+                }
+            } catch (e) { /* non-critical */ }
+        }
+        loadStats();
+    </script>
+</body>
+
+</html>

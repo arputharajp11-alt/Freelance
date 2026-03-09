@@ -1,0 +1,41 @@
+# Render backend deployment — https://render.com
+# ─────────────────────────────────────────────
+# Deploys the Node.js Express API + Socket.IO server.
+# Connect your GitHub repo on Render and this file configures auto-deploy.
+
+services:
+  - type: web
+    name: freelancer-hub-api
+    runtime: node
+    region: oregon          # Closest free-tier region
+    plan: free
+
+    buildCommand: npm install --ignore-scripts
+    startCommand: node server.js
+
+    # Health check — Render pings this to keep service alive
+    healthCheckPath: /api/stats
+
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        sync: false         # ← Set this in Render dashboard (your Neon URL)
+      - key: JWT_SECRET
+        generateValue: true # Auto-generated secure random secret
+      - key: FRONTEND_URL
+        value: https://arjunlight.netlify.app
+      - key: EMAIL_HOST
+        value: smtp.ethereal.email
+      - key: EMAIL_PORT
+        value: 587
+      - key: EMAIL_USER
+        sync: false         # ← Optional: set in Render dashboard
+      - key: EMAIL_PASS
+        sync: false         # ← Optional: set in Render dashboard
+      - key: MAX_FILE_SIZE
+        value: 10485760
+      - key: UPLOAD_DIR
+        value: uploads

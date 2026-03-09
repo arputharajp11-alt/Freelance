@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="My notifications on FreelancerHub.">
+    <title>Notifications — FreelancerHub</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/advanced.css">
+    <link rel="stylesheet" href="/css/theme.css">
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <a href="/" class="navbar-brand">
+            <div class="logo-icon">&#9670;</div><span>FreelancerHub</span>
+        </a>
+        <ul class="navbar-links" id="navLinks">
+            <li><a href="/jobs.html">&#128188; Jobs</a></li>
+            <li><a href="/dashboard.html">&#128202; Dashboard</a></li>
+            <li><a href="/chat.html">&#128172; Chat</a></li>
+            <li><a href="/notifications.html" class="active">&#128276; Alerts</a></li>
+        </ul>
+        <div class="navbar-right">
+            <a href="/login.html" class="btn btn-outline btn-sm" id="navLogin" style="display:none;">Sign In</a>
+            <a href="/register.html" class="btn btn-primary btn-sm" id="navRegister" style="display:none;">Get
+                Started</a>
+            <div class="nav-dropdown" id="navUser">
+                <div class="nav-avatar" id="navAvatar" onclick="toggleDropdown()">U</div>
+                <div class="nav-dropdown-menu" id="navDropdown">
+                    <a href="/profile.html">&#128100; Profile</a>
+                    <a href="/dashboard.html">&#128202; Dashboard</a>
+                    <a href="/wallet.html">&#128176; Wallet</a>
+                    <div class="nav-dropdown-divider"></div>
+                    <a href="#" onclick="logout();return false;" style="color:var(--error);">&#128682; Sign Out</a>
+                </div>
+            </div>
+            <button class="nav-toggle" onclick="toggleNav()">&#9776;</button>
+        </div>
+    </nav>
+
+    <div class="toast-container" id="toastContainer"></div>
+    <div class="orb-mid"></div>
+
+    <main class="main-content">
+        <div class="container" style="padding-top:40px; max-width:760px;">
+
+            <div class="flex-between mb-3">
+                <div>
+                    <h1 style="font-size:1.9rem;font-weight:800;font-family:'Space Grotesk',sans-serif;">
+                        &#128276; Notifications
+                    </h1>
+                    <p style="color:var(--text-secondary);font-size:0.875rem;margin-top:4px;">
+                        Stay up to date with your activity
+                    </p>
+                </div>
+                <button class="btn btn-outline btn-sm" onclick="markAllRead()">
+                    &#10003; Mark All Read
+                </button>
+            </div>
+
+            <!-- Tabs -->
+            <div class="tab-group mb-3">
+                <button class="tab-btn active" onclick="filterNotifs('all', this)">All</button>
+                <button class="tab-btn" onclick="filterNotifs('unread', this)">Unread</button>
+            </div>
+
+            <!-- Notification list -->
+            <div id="notifList">
+                <div class="loading-overlay">
+                    <div class="loading-spinner"></div>
+                    <span>Loading notifications...</span>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>© 2025 FreelancerHub. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="/js/config.js"></script>
+    <script src="/js/theme.js"></script>
+    <script src="/js/app.js"></script>
+    <script>
+        requireAuth();
+        loadNotifications();
+    </script>
+</body>
+
+</html>

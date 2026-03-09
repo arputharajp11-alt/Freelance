@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="Browse freelance jobs on FreelancerHub — find blockchain, design, development, and more.">
+    <title>Browse Jobs — FreelancerHub</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/advanced.css">
+    <link rel="stylesheet" href="/css/theme.css">
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <a href="/" class="navbar-brand">
+            <div class="logo-icon">&#9670;</div><span>FreelancerHub</span>
+        </a>
+        <ul class="navbar-links" id="navLinks">
+            <li><a href="/jobs.html" class="active">&#128188; Jobs</a></li>
+            <li><a href="/dashboard.html">&#128202; Dashboard</a></li>
+            <li><a href="/chat.html">&#128172; Chat <span class="nav-badge hidden" id="chat-badge"></span></a></li>
+            <li><a href="/notifications.html">&#128276; <span class="nav-badge hidden" id="notif-badge"></span></a></li>
+        </ul>
+        <div class="navbar-right">
+            <a href="/login.html" class="btn btn-outline btn-sm" id="navLogin">Sign In</a>
+            <a href="/register.html" class="btn btn-primary btn-sm" id="navRegister">Get Started</a>
+            <div class="nav-dropdown" id="navUser" style="display:none;">
+                <div class="nav-avatar" id="navAvatar" onclick="toggleDropdown()">U</div>
+                <div class="nav-dropdown-menu" id="navDropdown">
+                    <a href="/profile.html">&#128100; Profile</a>
+                    <a href="/dashboard.html">&#128202; Dashboard</a>
+                    <a href="/post-job.html">&#43; Post Job</a>
+                    <a href="/wallet.html">&#128176; Wallet</a>
+                    <div class="nav-dropdown-divider"></div>
+                    <a href="#" onclick="logout();return false;" style="color:var(--error);">&#128682; Sign Out</a>
+                </div>
+            </div>
+            <button class="nav-toggle" onclick="toggleNav()">&#9776;</button>
+        </div>
+    </nav>
+
+    <div class="toast-container" id="toastContainer"></div>
+    <div class="orb-mid"></div>
+
+    <main class="main-content">
+        <div class="container" style="padding-top:36px;">
+
+            <!-- Page Header -->
+            <div class="flex-between mb-3">
+                <div>
+                    <h1 style="font-size:1.9rem;font-weight:800;font-family:'Space Grotesk',sans-serif;">
+                        &#128188; Browse Jobs
+                    </h1>
+                    <p style="color:var(--text-secondary);font-size:0.875rem;margin-top:4px;">
+                        Find your next project — <span id="jobCount">loading...</span>
+                    </p>
+                </div>
+                <a href="/post-job.html" class="btn btn-primary" id="postJobBtn" style="display:none;">
+                    &#43; Post a Job
+                </a>
+            </div>
+
+            <!-- Filters -->
+            <div class="filter-bar">
+                <input type="search" class="form-input" id="searchInput"
+                    placeholder="&#128269; Search by title or keyword..." oninput="filterJobs()"
+                    style="flex:2;min-width:220px;">
+
+                <select class="form-select" id="categoryFilter" onchange="filterJobs()">
+                    <option value="">All Categories</option>
+                    <option>Web Development</option>
+                    <option>Mobile Development</option>
+                    <option>Design</option>
+                    <option>Writing</option>
+                    <option>Marketing</option>
+                    <option>Data Science</option>
+                    <option>Blockchain</option>
+                    <option>DevOps</option>
+                    <option>Video & Animation</option>
+                </select>
+
+                <select class="form-select" id="experienceFilter" onchange="filterJobs()">
+                    <option value="">Any Level</option>
+                    <option value="beginner">Beginner</option>
+                    <option value="intermediate">Intermediate</option>
+                    <option value="expert">Expert</option>
+                </select>
+
+                <select class="form-select" id="budgetFilter" onchange="filterJobs()">
+                    <option value="">Any Budget</option>
+                    <option value="fixed">Fixed Price</option>
+                    <option value="hourly">Hourly Rate</option>
+                </select>
+            </div>
+
+            <!-- Grid -->
+            <div class="jobs-grid" id="jobsGrid">
+                <div class="loading-overlay">
+                    <div class="loading-spinner"></div>
+                    <span>Loading jobs...</span>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>© 2025 FreelancerHub. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="/js/config.js"></script>
+    <script src="/js/theme.js"></script>
+    <script src="/js/app.js"></script>
+    <script>
+        // Show post job button only for clients
+        const u = getUser();
+        if (u && u.role === 'client') document.getElementById('postJobBtn').style.display = '';
+
+        loadJobs();
+
+        // Override filterJobs to also handle experience/budget type filters
+        const _orig = filterJobs;
+        function filterJobs() {
+            const q = (document.getElementById('searchInput')?.value || '').toLowerCase();
+            const cat = document.getElementById('categoryFilter')?.value || '';
+            const exp = document.getElementById('experienceFilter')?.value || '';
+            const btyp = document.getElementById('budgetFilter')?.value || '';
+
+            const filtered = allJobs.filter(j => {
+                const mqt = !q || j.title.toLowerCase().includes(q) || (j.description || '').toLowerCase().includes(q);
+                const mcat = !cat || j.category === cat;
+                const mexp = !exp || j.experience_level === exp;
+                const mbud = !btyp || j.budget_type === btyp;
+                return mqt && mcat && mexp && mbud;
+            });
+
+            renderJobs(filtered);
+            const el = document.getElementById('jobCount');
+            if (el) el.textContent = `${filtered.length} job${filtered.length !== 1 ? 's' : ''} found`;
+        }
+    </script>
+</body>
+
+</html>
