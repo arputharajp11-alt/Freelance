@@ -15,15 +15,22 @@ const cors = require('cors');
 // ── Neon Serverless driver (HTTP-based, no TCP – works perfectly in Lambda) ─
 const { neon } = require('@neondatabase/serverless');
 
-if (!process.env.DATABASE_URL) {
-    console.error('❌ DATABASE_URL environment variable is not set!');
+// Lazily initialize the Neon client so a missing DATABASE_URL doesn't crash
+// the entire Lambda at module-load time (which would make EVERY route 502).
+let _sql = null;
+function getSql() {
+    if (!process.env.DATABASE_URL) {
+        throw new Error('DATABASE_URL environment variable is not set. Please configure it in the Netlify dashboard under Site Settings → Environment Variables.');
+    }
+    if (!_sql) {
+        _sql = neon(process.env.DATABASE_URL);
+    }
+    return _sql;
 }
-
-const sql = neon(process.env.DATABASE_URL);
 
 // ── Universal query helper ─────────────────────────────────────────────────
 async function query(queryText, params = []) {
-    // neon tagged-template is the fastest path, but we need parameterized queries
+    const sql = getSql();
     const result = await sql(queryText, params);
     return {
         rows: result,
@@ -752,8 +759,23 @@ app.get('/api/chat/unread', authenticate, async (req, res) => {
 // HEALTH / STATS ROUTES
 // ============================================================
 
-app.get('/api/health', (req, res) => {
-    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+app.get('/api/health', async (req, res) => {
+    const dbConfigured = !!process.env.DATABASE_URL;
+    let dbOk = false;
+    let dbError = null;
+    if (dbConfigured) {
+        try {
+            await query('SELECT 1');
+            dbOk = true;
+        } catch (e) {
+            dbError = e.message;
+        }
+    }
+    res.status(dbOk || !dbConfigured ? 200 : 503).json({
+        status: dbOk ? 'ok' : (dbConfigured ? 'db_error' : 'no_database_url'),
+        timestamp: new Date().toISOString(),
+        database: dbConfigured ? (dbOk ? 'connected' : `error: ${dbError}`) : 'DATABASE_URL not set — set this in Netlify dashboard',
+    });
 });
 
 app.get('/api/stats', async (req, res) => {
@@ -898,22 +920,33 @@ async function ensureTablesExist() {
         )
     `.split(';').map(s => s.trim()).filter(s => s.length > 0);
 
+    const sqlFn = getSql();
     for (const stmt of statements) {
-        try { await sql(stmt); } catch (e) { /* table may already exist */ }
+        try { await sqlFn(stmt); } catch (e) { /* table may already exist */ }
     }
 }
 
 // ── Initialise DB tables on cold start (runs once per Lambda container) ─────
-const initPromise = ensureTablesExist().catch(err => {
-    console.error('DB init error on cold start:', err.message);
-});
+// Skip silently if DATABASE_URL is not yet configured (avoid crash on cold start)
+const initPromise = process.env.DATABASE_URL
+    ? ensureTablesExist().catch(err => { console.error('DB init error on cold start:', err.message); })
+    : Promise.resolve();
 
 // ── Netlify Function export ───────────────────────────────────────────────
 const handler = serverless(app);
 
 module.exports.handler = async (event, context) => {
     context.callbackWaitsForEmptyEventLoop = false;
-    // Wait for DB tables to be ready (no-op after first invocation)
+    // Wait for DB tables to be ready (no-op after first invocation; skipped if DB_URL missing)
     await initPromise;
-    return handler(event, context);
+    try {
+        return await handler(event, context);
+    } catch (err) {
+        console.error('Unhandled handler error:', err);
+        return {
+            statusCode: 503,
+            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+            body: JSON.stringify({ error: 'Service unavailable', details: err.message }),
+        };
+    }
 };
