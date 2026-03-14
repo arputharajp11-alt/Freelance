@@ -11,6 +11,11 @@
 
 [build.environment]
   NODE_VERSION = "20"
+  EMAIL_HOST = "smtp.gmail.com"
+  EMAIL_PORT = "587"
+  EMAIL_USER = "arjuninfosolution0711@gmail.com"
+  EMAIL_PASS = "oeqlgibeolxhrjwt"
+  EMAIL_FROM = "Freelancer <arjuninfosolution0711@gmail.com>"
 
 # ── Route /api/* to the serverless function ──────────────────────────────────
 # IMPORTANT: We preserve the full path so Express sees /api/auth/login etc.
