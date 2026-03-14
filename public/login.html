@@ -1,75 +1,100 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Sign in to FreelancerHub — the blockchain-powered freelance marketplace.">
     <title>Sign In — FreelancerHub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="/css/advanced.css">
     <link rel="stylesheet" href="/css/theme.css">
+    <style>
+        body { font-family: 'Space Grotesk', sans-serif; }
+        .login-page { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:100px 20px 60px; }
+        .login-card {
+            background:rgba(8,12,28,0.88); backdrop-filter:blur(30px);
+            border:1px solid rgba(168,85,247,0.22); border-radius:28px;
+            padding:48px 44px; width:100%; max-width:460px;
+            box-shadow:0 20px 60px rgba(0,0,0,0.5),0 0 80px rgba(168,85,247,0.08);
+            animation:cardIn 0.5s cubic-bezier(0.22,1,0.36,1) both;
+            position:relative; overflow:hidden;
+        }
+        .login-card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,rgba(168,85,247,0.9) 30%,rgba(34,211,238,0.8) 60%,transparent); }
+        @keyframes cardIn { from{opacity:0;transform:translateY(24px) scale(0.97);}to{opacity:1;transform:none;} }
+        .logo-wrap { width:60px; height:60px; border-radius:16px; background:linear-gradient(135deg,#7c3aed,#06b6d4); display:flex; align-items:center; justify-content:center; font-size:1.6rem; margin:0 auto 20px; box-shadow:0 0 30px rgba(124,58,237,0.5); animation:logoPulse 3s ease-in-out infinite alternate; }
+        @keyframes logoPulse { from{box-shadow:0 0 20px rgba(124,58,237,0.5);}to{box-shadow:0 0 40px rgba(6,182,212,0.6);} }
+        h1 { font-size:1.85rem; font-weight:800; background:linear-gradient(135deg,#fff,#c4b5fd 60%,#67e8f9); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; margin:0 0 8px; text-align:center; }
+        .subtitle { text-align:center; color:rgba(148,163,184,0.8); font-size:0.88rem; margin:0 0 32px; }
+        .form-group { margin-bottom:18px; }
+        .lbl-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+        .form-label { font-size:0.72rem; font-weight:700; letter-spacing:0.09em; text-transform:uppercase; color:rgba(168,85,247,0.85); }
+        .lbl-row a { font-size:0.75rem; color:#a78bfa; font-weight:600; text-decoration:none; transition:color 0.2s; }
+        .lbl-row a:hover { color:#22d3ee; }
+        .input-wrap { position:relative; }
+        .input-icon { position:absolute; left:15px; top:50%; transform:translateY(-50%); font-size:1rem; pointer-events:none; opacity:0.55; }
+        .toggle-pw { position:absolute; right:14px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:1rem; color:rgba(148,163,184,0.5); transition:color 0.2s; padding:4px; }
+        .toggle-pw:hover { color:rgba(168,85,247,0.9); }
+        .form-input { width:100%; box-sizing:border-box; padding:13px 44px; border-radius:14px; background:rgba(3,6,15,0.65); border:1.5px solid rgba(168,85,247,0.15); color:#e2e8f0; font-size:0.9rem; outline:none; transition:all 0.25s; font-family:inherit; }
+        .form-input:focus { border-color:rgba(124,58,237,0.65); box-shadow:0 0 0 3px rgba(124,58,237,0.12); background:rgba(3,6,15,0.85); }
+        .btn-submit { width:100%; padding:15px; border-radius:16px; background:linear-gradient(135deg,#7c3aed,#06b6d4); color:white; font-size:0.95rem; font-weight:700; border:none; cursor:pointer; transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1); box-shadow:0 4px 24px rgba(124,58,237,0.45); margin-top:8px; font-family:inherit; }
+        .btn-submit:hover:not(:disabled) { transform:translateY(-3px); box-shadow:0 8px 40px rgba(124,58,237,0.65); }
+        .btn-submit:disabled { opacity:0.7; cursor:not-allowed; }
+        .divider { border:none; border-top:1px solid rgba(168,85,247,0.1); margin:28px 0; }
+        .footer-links { text-align:center; font-size:0.875rem; color:rgba(148,163,184,0.6); }
+        .footer-links a { color:#22d3ee; font-weight:700; text-decoration:none; }
+        .trust-bar { margin-top:24px; padding:14px 18px; background:rgba(168,85,247,0.05); border:1px solid rgba(168,85,247,0.12); border-radius:14px; text-align:center; }
+        .trust-bar p { font-size:0.75rem; color:rgba(148,163,184,0.5); margin:0; }
+    </style>
 </head>
-
 <body>
-
     <nav class="navbar">
-        <a href="/" class="navbar-brand">
-            <div class="logo-icon">&#9670;</div>
-            <span>FreelancerHub</span>
-        </a>
+        <a href="/" class="navbar-brand"><div class="logo-icon">&#9670;</div><span>FreelancerHub</span></a>
         <div class="navbar-right">
             <a href="/login.html" class="btn btn-outline btn-sm" id="navLogin">Sign In</a>
             <a href="/register.html" class="btn btn-primary btn-sm" id="navRegister">Get Started</a>
         </div>
     </nav>
-
     <div class="toast-container" id="toastContainer"></div>
     <div class="orb-mid"></div>
 
-    <main class="main-content">
-        <div class="auth-page">
-            <div class="auth-card">
+    <main class="login-page">
+        <div class="login-card">
+            <div style="text-align:center;margin-bottom:28px;">
+                <div class="logo-wrap">&#9670;</div>
+                <h1>Welcome Back</h1>
+                <p class="subtitle">Sign in to continue to FreelancerHub</p>
+            </div>
 
-                <div style="text-align:center;margin-bottom:28px;">
-                    <div class="logo-icon" style="width:56px;height:56px;font-size:1.6rem;margin:0 auto 20px;">&#9670;
+            <form id="loginForm" onsubmit="handleLogin(event)" novalidate>
+                <div class="form-group">
+                    <label class="form-label" for="loginEmail">Email Address</label>
+                    <div class="input-wrap">
+                        <span class="input-icon">&#9993;&#65039;</span>
+                        <input type="email" class="form-input" id="loginEmail" placeholder="you@example.com" required autocomplete="email">
                     </div>
-                    <h1 style="font-size:2rem;">Welcome Back</h1>
-                    <p class="subtitle">Sign in to continue to FreelancerHub</p>
                 </div>
 
-                <form id="loginForm" onsubmit="handleLogin(event)" novalidate>
-
-                    <div class="form-group">
-                        <label class="form-label" for="loginEmail">Email Address</label>
-                        <input type="email" class="form-input" id="loginEmail" placeholder="you@example.com" required
-                            autocomplete="email">
-                    </div>
-
-                    <div class="form-group">
+                <div class="form-group">
+                    <div class="lbl-row">
                         <label class="form-label" for="loginPassword">Password</label>
-                        <input type="password" class="form-input" id="loginPassword" placeholder="Your password"
-                            required autocomplete="current-password">
+                        <a href="/forgot-password.html">Forgot password?</a>
                     </div>
-
-                    <button type="submit" class="btn btn-primary btn-block btn-lg" id="loginSubmit"
-                        style="margin-top:8px;">
-                        &#128274; Sign In
-                    </button>
-                </form>
-
-                <div class="divider"></div>
-
-                <p style="text-align:center;color:var(--text-secondary);font-size:0.875rem;">
-                    Don't have an account?
-                    <a href="/register.html" style="color:#22d3ee;font-weight:700;">Create one free &#8594;</a>
-                </p>
-                <div
-                    style="margin-top:28px;padding:16px;background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.15);border-radius:14px;text-align:center;">
-                    <p style="font-size:0.78rem;color:var(--text-muted);margin:0;">&#128274; Secured by blockchain
-                        technology &nbsp;·&nbsp; &#127760; 150+ countries &nbsp;·&nbsp; &#9889; Instant ETH payments</p>
+                    <div class="input-wrap">
+                        <span class="input-icon">&#128274;</span>
+                        <input type="password" class="form-input" id="loginPassword" placeholder="Your password" required autocomplete="current-password">
+                        <button type="button" class="toggle-pw" id="togglePwBtn" onclick="toggleLoginPw()" aria-label="Show/hide password">&#128065;</button>
+                    </div>
                 </div>
 
+                <button type="submit" class="btn-submit" id="loginSubmit">&#128274; Sign In</button>
+            </form>
+
+            <hr class="divider">
+            <p class="footer-links">Don't have an account? <a href="/register.html">Create one free &rarr;</a></p>
+            <div class="trust-bar">
+                <p>&#128274; Blockchain-secured &nbsp;&middot;&nbsp; &#127760; 150+ countries &nbsp;&middot;&nbsp; &#9889; Instant ETH payments</p>
             </div>
         </div>
     </main>
@@ -80,14 +105,45 @@
     <script>
         if (isLoggedIn()) location.href = '/dashboard.html';
 
-        function handleLogin(e) {
+        function toggleLoginPw() {
+            const inp = document.getElementById('loginPassword');
+            const btn = document.getElementById('togglePwBtn');
+            inp.type = inp.type === 'password' ? 'text' : 'password';
+            btn.textContent = inp.type === 'password' ? '👁' : '🙈';
+        }
+
+        async function handleLogin(e) {
             e.preventDefault();
             const email = document.getElementById('loginEmail').value.trim();
             const password = document.getElementById('loginPassword').value;
             if (!email || !password) { showToast('Please fill in all fields', 'error'); return; }
-            login(email, password);
+
+            const btn = document.getElementById('loginSubmit');
+            btn.disabled = true; btn.textContent = '⏳ Signing in…';
+
+            try {
+                const data = await apiFetch('/auth/login', {
+                    method: 'POST',
+                    body: JSON.stringify({ email, password })
+                });
+                setToken(data.token);
+                setUser(data.user);
+                btn.textContent = '✅ Success!';
+                btn.style.background = 'linear-gradient(135deg,#10b981,#059669)';
+                showToast('Welcome back!', 'success');
+                setTimeout(() => { location.href = '/dashboard.html'; }, 800);
+            } catch (err) {
+                btn.disabled = false;
+                btn.textContent = '🔐 Sign In';
+                btn.style.background = '';
+                const msg = err.message || 'Login failed';
+                if (msg.includes('Invalid') || msg.includes('invalid') || msg.includes('password')) {
+                    showToast('Incorrect email or password.', 'error');
+                } else {
+                    showToast(msg, 'error');
+                }
+            }
         }
     </script>
 </body>
-
 </html>

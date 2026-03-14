@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,13 +9,9 @@
     <link rel="stylesheet" href="/css/advanced.css">
     <link rel="stylesheet" href="/css/theme.css">
 </head>
-
 <body>
-
     <nav class="navbar">
-        <a href="/" class="navbar-brand">
-            <div class="logo-icon">&#9670;</div><span>FreelancerHub</span>
-        </a>
+        <a href="/" class="navbar-brand"><div class="logo-icon">&#9670;</div><span>FreelancerHub</span></a>
         <ul class="navbar-links" id="navLinks">
             <li><a href="/jobs.html">&#128188; Jobs</a></li>
             <li><a href="/dashboard.html">&#128202; Dashboard</a></li>
@@ -25,8 +20,7 @@
         </ul>
         <div class="navbar-right">
             <a href="/login.html" class="btn btn-outline btn-sm" id="navLogin" style="display:none;">Sign In</a>
-            <a href="/register.html" class="btn btn-primary btn-sm" id="navRegister" style="display:none;">Get
-                Started</a>
+            <a href="/register.html" class="btn btn-primary btn-sm" id="navRegister" style="display:none;">Get Started</a>
             <div class="nav-dropdown" id="navUser">
                 <div class="nav-avatar" id="navAvatar" onclick="toggleDropdown()">U</div>
                 <div class="nav-dropdown-menu" id="navDropdown">
@@ -65,22 +59,20 @@
                     <div class="chat-empty" id="chatEmpty">
                         <div style="font-size:3rem;">&#128172;</div>
                         <div style="font-weight:600;color:var(--text-secondary);">Select a conversation</div>
-                        <div style="font-size:0.85rem;color:var(--text-muted);">Choose from your conversations on the
-                            left</div>
+                        <div style="font-size:0.85rem;color:var(--text-muted);">Choose from your conversations on the left</div>
                     </div>
 
-                    <div id="chatActiveArea" style="display:none;height:100%;flex-direction:column;display:none;">
+                    <div id="chatActiveArea" style="display:none;height:100%;flex-direction:column;">
                         <div class="chat-header" id="chatHeader">
-                            <div class="conversation-avatar">?</div>
+                            <div class="conversation-avatar" id="chatPartnerAvatar">?</div>
                             <div>
                                 <div style="font-weight:700;" id="chatPartnerName">—</div>
                                 <div style="font-size:0.75rem;color:var(--text-muted);" id="chatJobTitle">—</div>
                             </div>
                         </div>
                         <div class="chat-messages" id="chatMessages"></div>
-                        <div class="chat-input-area" id="chatInputArea">
-                            <input type="text" class="form-input" id="messageInput" placeholder="Type a message..."
-                                onkeydown="handleMsgKey(event)">
+                        <div class="chat-input-area" id="chatInputArea" style="display:none;">
+                            <input type="text" class="form-input" id="messageInput" placeholder="Type a message…" onkeydown="handleMsgKey(event)" autocomplete="off">
                             <button class="btn btn-primary" onclick="sendMessage()">Send &#10148;</button>
                         </div>
                     </div>
@@ -96,53 +88,6 @@
     <script>
         requireAuth();
         loadConversations();
-
-        // Override openConversation to also update header
-        const _origOpen = openConversation;
-        function openConversation(convId, partnerName, jobTitle) {
-            document.getElementById('chatEmpty').style.display = 'none';
-            const area = document.getElementById('chatActiveArea');
-            area.style.display = 'flex';
-
-            if (partnerName) {
-                document.getElementById('chatPartnerName').textContent = partnerName;
-                document.getElementById('chatJobTitle').textContent = jobTitle || '';
-                const av = area.querySelector('.conversation-avatar');
-                if (av) av.textContent = (partnerName || '?').charAt(0).toUpperCase();
-            }
-            _origOpen(convId);
-        }
-
-        // Re-wire conversation items to pass name + job
-        const _origLoadConvs = loadConversations;
-        function loadConversations() {
-            const el = document.getElementById('conversationList');
-            if (!el || !isLoggedIn()) return;
-            apiFetch('/chat/conversations')
-                .then(d => {
-                    const convs = d.conversations || [];
-                    if (!convs.length) {
-                        el.innerHTML = '<div class="empty-state" style="padding:40px 16px;"><div class="empty-state-icon">&#128172;</div><p>No conversations yet.</p></div>';
-                        return;
-                    }
-                    el.innerHTML = convs.map(c => `
-                    <div class="conversation-item" onclick="openConversation('${c.id}', ${JSON.stringify(c.other_name || 'Unknown')}, ${JSON.stringify(c.job_title || '')})">
-                        <div class="conversation-avatar">
-                            ${(c.other_name || '?').charAt(0).toUpperCase()}
-                            ${c.other_online ? '<span class="online-dot"></span>' : ''}
-                        </div>
-                        <div class="conversation-info">
-                            <div class="conversation-name">${escapeHtml(c.other_name || 'Unknown')}</div>
-                            <div class="conversation-preview">${escapeHtml(c.last_message || 'No messages yet')}</div>
-                        </div>
-                        ${c.unread_count > 0 ? `<span class="nav-badge">${c.unread_count}</span>` : ''}
-                    </div>
-                `).join('');
-                })
-                .catch(() => { el.innerHTML = '<div class="empty-state"><p>Could not load.</p></div>'; });
-        }
-        loadConversations();
     </script>
 </body>
-
 </html>

@@ -634,7 +634,10 @@ function filterNotifs(type, btn) {
     loadNotifications();
 }
 
-function loadConversations() {
+// Store conversation metadata so onclick doesn't need inline JSON
+window._convMeta = {};
+
+function loadConversations(silent = false) {
     const el = document.getElementById('conversationList');
     if (!el) return;
     if (!isLoggedIn()) { el.innerHTML = '<div class="empty-state"><p>Please sign in.</p></div>'; return; }
@@ -642,40 +645,63 @@ function loadConversations() {
     apiFetch('/chat/conversations')
         .then(d => {
             const convs = d.conversations || [];
+            // Cache metadata for use by openConversation
+            convs.forEach(c => { window._convMeta[c.id] = { name: c.other_name || 'Unknown', job: c.job_title || '' }; });
             if (!convs.length) { el.innerHTML = '<div class="empty-state" style="padding:20px"><p>No conversations yet.</p></div>'; return; }
-            el.innerHTML = convs.map(c => `
-                <div class="conversation-item" onclick="openConversation('${c.id}')">
-                    <div class="conversation-avatar">${(c.other_name || 'U').charAt(0).toUpperCase()}${c.other_online ? '<span class="online-dot"></span>' : ''}</div>
+            el.innerHTML = convs.map(c => {
+                const activeClass = window._activeConvId === c.id ? 'active' : '';
+                return `<div class="conversation-item ${activeClass}" onclick="openConversation('${c.id}')">
+                    <div class="conversation-avatar">${(c.other_name||'U').charAt(0).toUpperCase()}${c.other_online?'<span class="online-dot"></span>':''}</div>
                     <div class="conversation-info">
-                        <div class="conversation-name">${escapeHtml(c.other_name || 'Unknown')}</div>
-                        <div class="conversation-preview">${escapeHtml(c.last_message || 'No messages yet')}</div>
+                        <div class="conversation-name">${escapeHtml(c.other_name||'Unknown')}</div>
+                        <div class="conversation-preview">${escapeHtml(c.last_message||'No messages yet')}</div>
                     </div>
-                    ${c.unread_count > 0 ? `<span class="nav-badge">${c.unread_count}</span>` : ''}
-                </div>`).join('');
+                    ${c.unread_count>0?`<span class="nav-badge">${c.unread_count}</span>`:''}
+                </div>`;
+            }).join('');
         })
-        .catch(() => { el.innerHTML = '<div class="empty-state"><p>Could not load.</p></div>'; });
+        .catch(() => { if (!silent) el.innerHTML = '<div class="empty-state"><p>Could not load.</p></div>'; });
 }
 
-function openConversation(convId) {
+function openConversation(convId, silent = false) {
+    window._activeConvId = convId;
     const ci = document.getElementById('chatInputArea');
     const msgs = document.getElementById('chatMessages');
     if (ci) ci.style.display = 'flex';
-    if (msgs) msgs.innerHTML = '<div class="loading-overlay"><div class="loading-spinner"></div></div>';
+    if (!silent && msgs) msgs.innerHTML = '<div class="loading-overlay"><div class="loading-spinner"></div></div>';
+
+    // Update header if metadata is available
+    const meta = window._convMeta && window._convMeta[convId];
+    if (meta) {
+        const nameEl = document.getElementById('chatPartnerName');
+        const jobEl = document.getElementById('chatJobTitle');
+        if (nameEl) nameEl.textContent = meta.name;
+        if (jobEl) jobEl.textContent = meta.job;
+        const av = document.querySelector('#chatActiveArea .conversation-avatar');
+        if (av) av.textContent = (meta.name||'?').charAt(0).toUpperCase();
+    }
+
+    // Show/hide empty vs active area
+    const emptyEl = document.getElementById('chatEmpty');
+    const activeEl = document.getElementById('chatActiveArea');
+    if (emptyEl) emptyEl.style.display = 'none';
+    if (activeEl) { activeEl.style.display = 'flex'; }
 
     apiFetch(`/chat/messages/${convId}`)
         .then(d => {
             const user = getUser();
             const ms = d.messages || [];
             if (!msgs) return;
-            msgs.innerHTML = ms.map(m => {
+            // For silent polling skip re-render if count is same
+            if (silent && msgs.dataset.msgCount == ms.length) return;
+            msgs.dataset.msgCount = ms.length;
+            msgs.innerHTML = ms.length ? ms.map(m => {
                 const sent = String(m.sender_id) === String(user?.id);
-                return `<div class="message message-${sent ? 'sent' : 'received'}"><div class="message-text">${escapeHtml(m.message)}</div><div class="message-time">${timeAgo(m.created_at)}</div></div>`;
-            }).join('');
+                return `<div class="message message-${sent?'sent':'received'}"><div class="message-text">${escapeHtml(m.message)}</div><div class="message-time">${timeAgo(m.created_at)}</div></div>`;
+            }).join('') : '<div class="empty-state" style="padding:20px"><p>No messages yet. Say hello!</p></div>';
             msgs.scrollTop = msgs.scrollHeight;
-            // Store active conversation
-            window._activeConvId = convId;
         })
-        .catch(() => { if (msgs) msgs.innerHTML = '<div class="empty-state"><p>Could not load messages.</p></div>'; });
+        .catch(() => { if (!silent && msgs) msgs.innerHTML = '<div class="empty-state"><p>Could not load messages.</p></div>'; });
 }
 
 function handleMsgKey(e) { if (e.key === 'Enter') sendMessage(); }
@@ -683,12 +709,22 @@ function handleMsgKey(e) { if (e.key === 'Enter') sendMessage(); }
 function sendMessage() {
     const inp = document.getElementById('messageInput');
     const text = inp?.value?.trim();
-    if (!text || !window._activeConvId) return;
+    if (!text || !window._activeConvId) { if (!window._activeConvId) showToast('Select a conversation first','error'); return; }
     inp.value = '';
     apiFetch('/chat/messages', {
         method: 'POST',
         body: JSON.stringify({ conversation_id: window._activeConvId, message: text, receiver_id: 0 })
-    }).then(() => openConversation(window._activeConvId)).catch(() => { });
+    })
+    .then(() => { openConversation(window._activeConvId, true); loadConversations(true); })
+    .catch(e => { inp.value = text; showToast(e.message || 'Failed to send message', 'error'); });
+}
+
+// Start chat polling (3s) if on the chat page
+if (document.getElementById('chatMessages')) {
+    setInterval(() => {
+        if (window._activeConvId) openConversation(window._activeConvId, true);
+        loadConversations(true);
+    }, 3000);
 }
 
 function postJob(data) {
