@@ -79,6 +79,48 @@ function authorize(...roles) {
     };
 }
 
+// ── Nodemailer (Gmail SMTP) ───────────────────────────────────────────────
+const nodemailer = require('nodemailer');
+
+let _transporter = null;
+
+function getTransporter() {
+    if (_transporter) return _transporter;
+    const emailUser = process.env.EMAIL_USER || 'arjuninfosolution0711@gmail.com';
+    const emailPass = process.env.EMAIL_PASS || 'oeqlgibeolxhrjwt';
+    const emailHost = process.env.EMAIL_HOST || 'smtp.gmail.com';
+    const emailPort = process.env.EMAIL_PORT || '587';
+    if (emailUser && emailPass) {
+        _transporter = nodemailer.createTransport({
+            host: emailHost,
+            port: parseInt(emailPort),
+            secure: false, // TLS
+            auth: {
+                user: emailUser,
+                pass: emailPass,
+            },
+        });
+    }
+    return _transporter;
+}
+
+async function sendEmail({ to, subject, html }) {
+    try {
+        const transporter = getTransporter();
+        if (!transporter) {
+            console.log('[Email] No SMTP config — skipping email to:', to);
+            return false;
+        }
+        const from = process.env.EMAIL_FROM || 'Freelancer <arjuninfosolution0711@gmail.com>';
+        await transporter.sendMail({ from, to, subject, html });
+        console.log('[Email] Sent to:', to, '| Subject:', subject);
+        return true;
+    } catch (err) {
+        console.error('[Email] Failed to send email:', err.message);
+        return false;
+    }
+}
+
 // ── Express app ───────────────────────────────────────────────────────────
 const app = express();
 
@@ -123,7 +165,6 @@ app.post('/api/auth/register', async (req, res) => {
             return res.status(400).json({ error: 'Password must be at least 6 characters' });
         }
 
-
         const existing = await query('SELECT id FROM users WHERE email = $1', [email]);
         if (existing.rows.length > 0) {
             return res.status(400).json({ error: 'Email already registered' });
@@ -133,29 +174,18 @@ app.post('/api/auth/register', async (req, res) => {
         const verificationToken = uuidv4();
         const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
-        // Use only the core columns that definitely exist in any schema version
-        let result;
-        try {
-            result = await query(`
-                INSERT INTO users (email, password, full_name, role, skills, hourly_rate, bio, verification_token, verification_expires)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-                RETURNING id
-            `, [
-                email, hashedPassword, full_name, role,
-                JSON.stringify(skills || []),
-                hourly_rate || 0,
-                bio || '',
-                verificationToken,
-                verificationExpires
-            ]);
-        } catch (insertErr) {
-            // Fallback: insert without optional columns that may be missing
-            result = await query(`
-                INSERT INTO users (email, password, full_name, role)
-                VALUES ($1, $2, $3, $4)
-                RETURNING id
-            `, [email, hashedPassword, full_name, role]);
-        }
+        const result = await query(`
+            INSERT INTO users (email, password, full_name, role, skills, hourly_rate, bio, verification_token, verification_expires)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            RETURNING id
+        `, [
+            email, hashedPassword, full_name, role,
+            JSON.stringify(skills || []),
+            hourly_rate || 0,
+            bio || '',
+            verificationToken,
+            verificationExpires
+        ]);
 
         const userId = result.rows[0].id;
         const token = generateToken(userId);
@@ -165,6 +195,29 @@ app.post('/api/auth/register', async (req, res) => {
             [userId]
         );
         const user = userRow.rows[0];
+
+        // Send welcome + verification email (fire-and-forget)
+        const verifyUrl = `https://arjunlight.netlify.app/verify-email.html?token=${verificationToken}`;
+        sendEmail({
+            to: email,
+            subject: 'Welcome to Freelancer! Please verify your email 🎉',
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #f9f9f9;">
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
+                        <h1 style="color: white; margin: 0; font-size: 28px;">Welcome to Freelancer! 🚀</h1>
+                    </div>
+                    <div style="background: white; padding: 30px; border-radius: 0 0 12px 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                        <p style="font-size: 16px; color: #333;">Hi <strong>${full_name}</strong>,</p>
+                        <p style="font-size: 16px; color: #555;">Your account has been created as a <strong>${role}</strong>. Please verify your email to unlock all features.</p>
+                        <div style="text-align: center; margin: 30px 0;">
+                            <a href="${verifyUrl}" style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-size: 16px; font-weight: bold;">✅ Verify My Email</a>
+                        </div>
+                        <p style="font-size: 14px; color: #888;">This verification link expires in 24 hours. If you did not create this account, you can ignore this email.</p>
+                        <p style="font-size: 14px; color: #888; text-align: center;">— The Freelancer Team</p>
+                    </div>
+                </div>
+            `
+        }).catch(() => {});
 
         res.status(201).json({
             message: 'Registration successful! Welcome to FreelancerHub.',
@@ -185,7 +238,6 @@ app.post('/api/auth/login', async (req, res) => {
             return res.status(400).json({ error: 'Email and password are required' });
         }
 
-
         const result = await query('SELECT * FROM users WHERE email = $1', [email]);
         if (result.rows.length === 0) {
             return res.status(401).json({ error: 'Invalid email or password' });
@@ -196,30 +248,19 @@ app.post('/api/auth/login', async (req, res) => {
             return res.status(401).json({ error: 'Invalid email or password' });
         }
 
-        // Best-effort: update online status — never crash login if columns are missing
-        try {
-            await query('UPDATE users SET is_online = true, last_seen = NOW() WHERE id = $1', [user.id]);
-        } catch (e) { /* is_online/last_seen may not exist yet */ }
-
+        await query('UPDATE users SET is_online = true, last_seen = NOW() WHERE id = $1', [user.id]);
         const token = generateToken(user.id);
 
         res.json({
             message: 'Login successful',
             token,
             user: {
-                id: user.id,
-                email: user.email,
-                full_name: user.full_name || '',
-                role: user.role,
-                is_verified: user.is_verified || false,
-                wallet_address: user.wallet_address || '',
-                avatar: user.avatar || null,
-                rating: user.rating || 0,
-                skills: JSON.parse(user.skills || '[]'),
-                bio: user.bio || '',
-                hourly_rate: user.hourly_rate || 0,
-                total_earnings: user.total_earnings || 0,
-                total_spent: user.total_spent || 0
+                id: user.id, email: user.email, full_name: user.full_name,
+                role: user.role, is_verified: user.is_verified,
+                wallet_address: user.wallet_address, avatar: user.avatar,
+                rating: user.rating, skills: JSON.parse(user.skills || '[]'),
+                bio: user.bio, hourly_rate: user.hourly_rate,
+                total_earnings: user.total_earnings, total_spent: user.total_spent
             }
         });
     } catch (error) {
@@ -326,6 +367,223 @@ app.get('/api/auth/users', async (req, res) => {
         res.json({ users: result.rows.map(u => ({ ...u, skills: JSON.parse(u.skills || '[]') })) });
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch users' });
+    }
+});
+
+// POST /api/auth/forgot-password
+app.post('/api/auth/forgot-password', async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email) return res.status(400).json({ error: 'Email is required' });
+
+        const result = await query('SELECT id, full_name FROM users WHERE email = $1', [email]);
+        if (result.rows.length === 0) {
+            // Don't reveal whether email exists
+            return res.json({ message: 'If that email exists, a reset link has been sent.' });
+        }
+
+        const user = result.rows[0];
+        const resetToken = uuidv4();
+        const resetExpires = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1 hour
+
+        await query('UPDATE users SET reset_token = $1, reset_expires = $2 WHERE id = $3',
+            [resetToken, resetExpires, user.id]);
+
+        const resetUrl = `https://arjunlight.netlify.app/reset-password.html?token=${resetToken}`;
+
+        await sendEmail({
+            to: email,
+            subject: 'Reset Your Freelancer Password',
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #f9f9f9;">
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
+                        <h1 style="color: white; margin: 0; font-size: 24px;">Password Reset Request</h1>
+                    </div>
+                    <div style="background: white; padding: 30px; border-radius: 0 0 12px 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                        <p style="font-size: 16px; color: #333;">Hi <strong>${user.full_name}</strong>,</p>
+                        <p style="font-size: 16px; color: #555;">We received a request to reset your password. Click the button below to set a new password:</p>
+                        <div style="text-align: center; margin: 30px 0;">
+                            <a href="${resetUrl}" style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-size: 16px; font-weight: bold;">Reset Password</a>
+                        </div>
+                        <p style="font-size: 14px; color: #888;">This link expires in 1 hour. If you did not request this, please ignore this email.</p>
+                        <p style="font-size: 14px; color: #888; text-align: center;">— The Freelancer Team</p>
+                    </div>
+                </div>
+            `
+        });
+
+        res.json({ message: 'If that email exists, a reset link has been sent.' });
+    } catch (error) {
+        console.error('Forgot password error:', error);
+        res.status(500).json({ error: 'Failed to process request' });
+    }
+});
+
+// POST /api/auth/reset-password
+app.post('/api/auth/reset-password', async (req, res) => {
+    try {
+        const { token, password } = req.body;
+        if (!token || !password) return res.status(400).json({ error: 'Token and password are required' });
+        if (password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' });
+
+        const result = await query(
+            'SELECT id, email, full_name FROM users WHERE reset_token = $1 AND reset_expires > NOW()',
+            [token]
+        );
+        if (result.rows.length === 0) {
+            return res.status(400).json({ error: 'Invalid or expired reset token' });
+        }
+
+        const user = result.rows[0];
+        const hashedPassword = await bcrypt.hash(password, 10);
+        await query('UPDATE users SET password = $1, reset_token = NULL, reset_expires = NULL WHERE id = $2',
+            [hashedPassword, user.id]);
+
+        sendEmail({
+            to: user.email,
+            subject: 'Your Freelancer Password Has Been Reset',
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                    <p>Hi <strong>${user.full_name}</strong>,</p>
+                    <p>Your password has been successfully reset. If you did not do this, please contact us immediately.</p>
+                    <p>— The Freelancer Team</p>
+                </div>
+            `
+        }).catch(() => {});
+
+        res.json({ message: 'Password reset successfully! You can now login.' });
+    } catch (error) {
+        console.error('Reset password error:', error);
+        res.status(500).json({ error: 'Failed to reset password' });
+    }
+});
+
+// GET /api/auth/verify-email?token=...
+app.get('/api/auth/verify-email', async (req, res) => {
+    try {
+        const { token } = req.query;
+        if (!token) return res.status(400).json({ error: 'Verification token is required' });
+
+        const result = await query(
+            'SELECT id, email, full_name FROM users WHERE verification_token = $1 AND verification_expires > NOW()',
+            [token]
+        );
+        if (result.rows.length === 0) {
+            // Check if already verified
+            const alreadyVerified = await query('SELECT id FROM users WHERE verification_token = $1', [token]);
+            if (alreadyVerified.rows.length > 0) {
+                return res.status(400).json({ error: 'already_verified', message: 'Email already verified. Please login.' });
+            }
+            return res.status(400).json({ error: 'expired', message: 'Verification link has expired. Request a new one.' });
+        }
+
+        const user = result.rows[0];
+        await query('UPDATE users SET is_verified = true, verification_token = NULL, verification_expires = NULL WHERE id = $1', [user.id]);
+
+        sendEmail({
+            to: user.email,
+            subject: '✅ Email Verified — Welcome to Freelancer!',
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #f9f9f9;">
+                    <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
+                        <h1 style="color: white; margin: 0; font-size: 26px;">Email Verified! 🎉</h1>
+                    </div>
+                    <div style="background: white; padding: 30px; border-radius: 0 0 12px 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                        <p style="font-size: 16px; color: #333;">Hi <strong>${user.full_name}</strong>,</p>
+                        <p style="font-size: 16px; color: #555;">Your email has been successfully verified. You now have full access to Freelancer!</p>
+                        <div style="text-align: center; margin: 30px 0;">
+                            <a href="https://arjunlight.netlify.app/dashboard.html" style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-size: 16px; font-weight: bold;">Go to Dashboard</a>
+                        </div>
+                        <p style="font-size: 14px; color: #888; text-align: center;">— The Freelancer Team</p>
+                    </div>
+                </div>
+            `
+        }).catch(() => {});
+
+        res.json({ message: 'Email verified successfully! You can now login.' });
+    } catch (error) {
+        console.error('Verify email error:', error);
+        res.status(500).json({ error: 'Failed to verify email' });
+    }
+});
+
+// POST /api/auth/resend-verification
+app.post('/api/auth/resend-verification', async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email) return res.status(400).json({ error: 'Email is required' });
+
+        const result = await query('SELECT id, full_name, is_verified FROM users WHERE email = $1', [email]);
+        if (result.rows.length === 0) {
+            return res.json({ message: 'If that email exists, a verification link has been sent.' });
+        }
+
+        const user = result.rows[0];
+        if (user.is_verified) {
+            return res.status(400).json({ error: 'Email is already verified. Please login.' });
+        }
+
+        const verificationToken = uuidv4();
+        const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+
+        await query('UPDATE users SET verification_token = $1, verification_expires = $2 WHERE id = $3',
+            [verificationToken, verificationExpires, user.id]);
+
+        const verifyUrl = `https://arjunlight.netlify.app/verify-email.html?token=${verificationToken}`;
+
+        await sendEmail({
+            to: email,
+            subject: 'Verify Your Freelancer Email',
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #f9f9f9;">
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
+                        <h1 style="color: white; margin: 0; font-size: 24px;">Verify Your Email</h1>
+                    </div>
+                    <div style="background: white; padding: 30px; border-radius: 0 0 12px 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                        <p style="font-size: 16px; color: #333;">Hi <strong>${user.full_name}</strong>,</p>
+                        <p style="font-size: 16px; color: #555;">Click the button below to verify your email address:</p>
+                        <div style="text-align: center; margin: 30px 0;">
+                            <a href="${verifyUrl}" style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-size: 16px; font-weight: bold;">Verify Email</a>
+                        </div>
+                        <p style="font-size: 14px; color: #888;">This link expires in 24 hours.</p>
+                        <p style="font-size: 14px; color: #888; text-align: center;">— The Freelancer Team</p>
+                    </div>
+                </div>
+            `
+        });
+
+        res.json({ message: 'Verification email sent! Check your inbox.' });
+    } catch (error) {
+        console.error('Resend verification error:', error);
+        res.status(500).json({ error: 'Failed to send verification email' });
+    }
+});
+
+// POST /api/auth/change-password
+app.post('/api/auth/change-password', authenticate, async (req, res) => {
+    try {
+        const { current_password, new_password } = req.body;
+        if (!current_password || !new_password) {
+            return res.status(400).json({ error: 'Current and new password are required' });
+        }
+        if (new_password.length < 6) {
+            return res.status(400).json({ error: 'New password must be at least 6 characters' });
+        }
+
+        const result = await query('SELECT password FROM users WHERE id = $1', [req.user.id]);
+        const user = result.rows[0];
+        const isMatch = await bcrypt.compare(current_password, user.password);
+        if (!isMatch) {
+            return res.status(400).json({ error: 'Current password is incorrect' });
+        }
+
+        const hashedPassword = await bcrypt.hash(new_password, 10);
+        await query('UPDATE users SET password = $1, updated_at = NOW() WHERE id = $2', [hashedPassword, req.user.id]);
+
+        res.json({ message: 'Password changed successfully!' });
+    } catch (error) {
+        console.error('Change password error:', error);
+        res.status(500).json({ error: 'Failed to change password' });
     }
 });
 
@@ -713,7 +971,7 @@ app.get('/api/chat/conversations', authenticate, async (req, res) => {
                    CASE WHEN c.user1_id = $1 THEN u2.avatar ELSE u1.avatar END as other_avatar,
                    CASE WHEN c.user1_id = $1 THEN u2.is_online ELSE u1.is_online END as other_online,
                    CASE WHEN c.user1_id = $1 THEN c.user2_id ELSE c.user1_id END as other_id,
-                   (SELECT COUNT(*) FROM messages m WHERE m.conversation_id = c.id AND m.receiver_id = $1 AND m.is_read = 0) as unread_count
+                   (SELECT COUNT(*) FROM messages m WHERE m.conversation_id = c.id AND m.receiver_id = $1 AND m.is_read = false) as unread_count
             FROM conversations c
             JOIN users u1 ON c.user1_id = u1.id JOIN users u2 ON c.user2_id = u2.id
             WHERE c.user1_id = $1 OR c.user2_id = $1
@@ -797,6 +1055,7 @@ app.get('/api/health', async (req, res) => {
         status: dbOk ? 'ok' : (dbConfigured ? 'db_error' : 'no_database_url'),
         timestamp: new Date().toISOString(),
         database: dbConfigured ? (dbOk ? 'connected' : `error: ${dbError}`) : 'DATABASE_URL not set — set this in Netlify dashboard',
+        email: process.env.EMAIL_USER ? `configured (${process.env.EMAIL_USER})` : 'not configured',
     });
 });
 
@@ -973,20 +1232,19 @@ async function ensureTablesExist() {
     }
 }
 
-// ── Initialise DB tables on cold start (fire-and-forget — never blocks requests) ─
-// Running migrations in the background means login/register work immediately
-// even on the first cold start after a fresh deploy.
-if (process.env.DATABASE_URL) {
-    ensureTablesExist().catch(err => {
-        console.error('DB init error on cold start:', err.message);
-    });
-}
+// ── Initialise DB tables on cold start (runs once per Lambda container) ─────
+// Skip silently if DATABASE_URL is not yet configured (avoid crash on cold start)
+const initPromise = process.env.DATABASE_URL
+    ? ensureTablesExist().catch(err => { console.error('DB init error on cold start:', err.message); })
+    : Promise.resolve();
 
 // ── Netlify Function export ───────────────────────────────────────────────
 const handler = serverless(app);
 
 module.exports.handler = async (event, context) => {
     context.callbackWaitsForEmptyEventLoop = false;
+    // Wait for DB tables to be ready (no-op after first invocation; skipped if DB_URL missing)
+    await initPromise;
     try {
         return await handler(event, context);
     } catch (err) {
