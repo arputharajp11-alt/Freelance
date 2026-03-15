@@ -1080,11 +1080,15 @@ app.get('/api/health', async (req, res) => {
             dbError = e.message;
         }
     }
+
+    const transporter = getTransporter();
+    const emailConfigured = !!transporter;
+
     res.status(dbOk || !dbConfigured ? 200 : 503).json({
         status: dbOk ? 'ok' : (dbConfigured ? 'db_error' : 'no_database_url'),
         timestamp: new Date().toISOString(),
-        database: dbConfigured ? (dbOk ? 'connected' : `error: ${dbError}`) : 'DATABASE_URL not set — set this in Netlify dashboard',
-        email: process.env.EMAIL_USER ? `configured (${process.env.EMAIL_USER})` : 'not configured',
+        database: dbConfigured ? (dbOk ? 'connected' : `error: ${dbError}`) : 'DATABASE_URL not set',
+        email: emailConfigured ? `configured (${process.env.EMAIL_USER || 'arjuninfosolution0711@gmail.com'})` : 'not configured',
     });
 });
 
