@@ -656,6 +656,7 @@ function loadConversations(silent = false) {
 
     apiFetch('/chat/conversations')
         .then(d => {
+            if (!d) return;
             const convs = d.conversations || [];
             // Cache metadata for use by openConversation
             convs.forEach(c => { window._convMeta[c.id] = { name: c.other_name || 'Unknown', job: c.job_title || '' }; });
@@ -701,6 +702,7 @@ function openConversation(convId, silent = false) {
 
     apiFetch(`/chat/messages/${convId}`)
         .then(d => {
+            if (!d) return;
             const user = getUser();
             const ms = d.messages || [];
             if (!msgs) return;
