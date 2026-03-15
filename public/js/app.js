@@ -276,7 +276,13 @@ function loadJobs() {
     if (!el) return;
     fetch(`${API_BASE}/jobs`)
         .then(r => r.json())
-        .then(d => { allJobs = d.jobs || []; renderJobs(allJobs); })
+        .then(d => {
+            allJobs = d.jobs || [];
+            renderJobs(allJobs);
+            // Update job count text
+            const countEl = document.getElementById('jobCount');
+            if (countEl) countEl.textContent = `${allJobs.length} job${allJobs.length !== 1 ? 's' : ''} found`;
+        })
         .catch(() => { el.innerHTML = '<div class="empty-state"><p>Could not load jobs.</p></div>'; });
 }
 
@@ -589,6 +595,12 @@ function loadWallet() {
 }
 
 function withdrawFunds() {
+    // Show the withdraw modal if it exists, otherwise fallback to prompt
+    const modal = document.getElementById('withdrawModal');
+    if (modal) {
+        modal.classList.add('show');
+        return;
+    }
     const amount = prompt('Enter amount in ETH to withdraw:');
     if (!amount || isNaN(amount)) return;
     apiFetch('/wallet/withdraw', { method: 'POST', body: JSON.stringify({ amount: parseFloat(amount) }) })

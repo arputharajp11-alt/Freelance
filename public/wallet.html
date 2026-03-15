@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="/css/advanced.css">
     <link rel="stylesheet" href="/css/theme.css">
+    <link rel="stylesheet" href="/css/enhancements.css">
 </head>
 
 <body>
@@ -24,8 +25,7 @@
         </ul>
         <div class="navbar-right">
             <a href="/login.html" class="btn btn-outline btn-sm" id="navLogin" style="display:none;">Sign In</a>
-            <a href="/register.html" class="btn btn-primary btn-sm" id="navRegister" style="display:none;">Get
-                Started</a>
+            <a href="/register.html" class="btn btn-primary btn-sm" id="navRegister" style="display:none;">Get Started</a>
             <div class="nav-dropdown" id="navUser">
                 <div class="nav-avatar" id="navAvatar" onclick="toggleDropdown()">U</div>
                 <div class="nav-dropdown-menu" id="navDropdown">
@@ -53,31 +53,30 @@
                     <span>ETH</span>
                     <span id="walletBalance">—</span>
                 </div>
-                <div style="display:flex;justify-content:center;gap:24px;margin-top:20px;flex-wrap:wrap;">
+                <div style="display:flex;justify-content:center;gap:40px;margin-top:20px;flex-wrap:wrap;">
                     <div style="text-align:center;">
-                        <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:4px;">Total Earned</div>
-                        <div style="font-weight:700;color:var(--success);" id="walletEarned">—</div>
+                        <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em;">Total Earned</div>
+                        <div style="font-weight:700;color:var(--success);font-size:1.1rem;" id="walletEarned">—</div>
                     </div>
                     <div style="width:1px;background:var(--border-color);"></div>
                     <div style="text-align:center;">
-                        <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:4px;">Pending</div>
-                        <div style="font-weight:700;color:var(--warning);" id="walletPending">—</div>
+                        <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em;">Pending</div>
+                        <div style="font-weight:700;color:var(--warning);font-size:1.1rem;" id="walletPending">—</div>
                     </div>
                 </div>
                 <!-- Wallet Actions -->
-                <div style="display:flex;gap:12px;justify-content:center;margin-top:24px;">
-                    <button class="btn btn-primary btn-sm" onclick="withdrawFunds()">
+                <div style="display:flex;gap:12px;justify-content:center;margin-top:28px;">
+                    <button class="btn btn-primary" onclick="openWithdrawModal()">
                         &#8593; Withdraw
                     </button>
-                    <button class="btn btn-secondary btn-sm" onclick="openDepositModal()">
+                    <button class="btn btn-secondary" onclick="openDepositModal()">
                         &#8595; Deposit
                     </button>
                 </div>
             </div>
 
             <!-- Stats Row -->
-            <div
-                style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:32px;">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:32px;">
                 <div class="stat-card" style="padding:20px;">
                     <div class="stat-value" style="font-size:1.5rem;" id="totalEarned">—</div>
                     <div class="stat-label">Total Earned</div>
@@ -98,8 +97,8 @@
                     <h2 style="font-size:1.1rem;font-weight:700;">&#128444; Transaction History</h2>
                     <div style="display:flex;gap:8px;">
                         <button class="tab-btn active" onclick="setTxFilter('', this)">All</button>
-                        <button class="tab-btn" onclick="setTxFilter('credit', this)">Credits</button>
-                        <button class="tab-btn" onclick="setTxFilter('debit', this)">Debits</button>
+                        <button class="tab-btn" onclick="setTxFilter('deposit', this)">Deposits</button>
+                        <button class="tab-btn" onclick="setTxFilter('withdrawal', this)">Withdrawals</button>
                     </div>
                 </div>
                 <div id="txList">
@@ -121,19 +120,42 @@
             </div>
             <div class="form-group">
                 <label class="form-label">Amount (ETH)</label>
-                <input type="number" class="form-input" id="depositAmount" step="0.001" placeholder="0.00">
+                <input type="number" class="form-input" id="depositAmount" step="0.001" min="0.001" placeholder="0.00">
             </div>
             <div class="form-group">
                 <label class="form-label">Transaction Hash (optional)</label>
                 <input type="text" class="form-input" id="depositTxHash" placeholder="0x...">
             </div>
-            <button class="btn btn-primary btn-block" onclick="confirmDeposit()">Confirm Deposit</button>
+            <button class="btn btn-primary btn-block" id="depositConfirmBtn" onclick="confirmDeposit()">Confirm Deposit</button>
+        </div>
+    </div>
+
+    <!-- Withdraw Modal -->
+    <div class="modal-overlay" id="withdrawModal">
+        <div class="modal" style="max-width:420px;">
+            <div class="modal-header">
+                <h2>&#8593; Withdraw ETH</h2>
+                <button class="modal-close" onclick="closeModal()">&#215;</button>
+            </div>
+            <div style="background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);border-radius:12px;padding:14px 18px;margin-bottom:20px;">
+                <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:4px;">Available Balance</div>
+                <div style="font-size:1.4rem;font-weight:800;color:var(--text-primary);" id="withdrawAvailableBalance">— ETH</div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Amount (ETH)</label>
+                <input type="number" class="form-input" id="withdrawAmount" step="0.001" min="0.001" placeholder="0.00">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Wallet Address (optional)</label>
+                <input type="text" class="form-input" id="withdrawAddress" placeholder="0x...">
+            </div>
+            <button class="btn btn-primary btn-block" id="withdrawConfirmBtn" onclick="confirmWithdraw()">Confirm Withdrawal</button>
         </div>
     </div>
 
     <footer class="footer">
         <div class="container">
-            <p>© 2025 FreelancerHub. All rights reserved.</p>
+            <p>&copy; 2025 FreelancerHub. All rights reserved.</p>
         </div>
     </footer>
 
@@ -146,22 +168,63 @@
         function setEl(id, v) { const e = document.getElementById(id); if (e) e.textContent = v; }
         let _walletData = null;
 
-        function openDepositModal() { document.getElementById('depositModal').classList.add('show'); }
+        function openDepositModal() {
+            document.getElementById('depositModal').classList.add('show');
+        }
+
+        function openWithdrawModal() {
+            // Update available balance in modal before showing
+            const bal = _walletData && _walletData.wallet ? parseFloat(_walletData.wallet.balance || 0).toFixed(4) + ' ETH' : '— ETH';
+            setEl('withdrawAvailableBalance', bal);
+            document.getElementById('withdrawModal').classList.add('show');
+        }
+
+        function closeModal() {
+            document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('show'));
+        }
 
         async function confirmDeposit() {
             const amount = parseFloat(document.getElementById('depositAmount').value);
             const txHash = document.getElementById('depositTxHash').value.trim();
             if (!amount || amount <= 0) { showToast('Enter a valid amount', 'error'); return; }
+            const btn = document.getElementById('depositConfirmBtn');
+            btn.disabled = true; btn.textContent = 'Processing...';
             try {
                 const d = await apiFetch('/wallet/deposit', { method: 'POST', body: JSON.stringify({ amount, tx_hash: txHash }) });
-                showToast(d.message || 'Deposited!', 'success');
+                showToast(d.message || 'Deposited successfully!', 'success');
                 closeModal();
+                document.getElementById('depositAmount').value = '';
+                document.getElementById('depositTxHash').value = '';
                 initWallet();
-            } catch (e) { showToast(e.message || 'Deposit failed', 'error'); }
+            } catch (e) {
+                showToast(e.message || 'Deposit failed', 'error');
+            } finally {
+                btn.disabled = false; btn.textContent = 'Confirm Deposit';
+            }
         }
 
-        function closeModal() {
-            document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('show'));
+        async function confirmWithdraw() {
+            const amount = parseFloat(document.getElementById('withdrawAmount').value);
+            const address = document.getElementById('withdrawAddress').value.trim();
+            const balance = _walletData && _walletData.wallet ? parseFloat(_walletData.wallet.balance || 0) : 0;
+
+            if (!amount || amount <= 0) { showToast('Enter a valid amount', 'error'); return; }
+            if (amount > balance) { showToast('Insufficient balance', 'error'); return; }
+
+            const btn = document.getElementById('withdrawConfirmBtn');
+            btn.disabled = true; btn.textContent = 'Processing...';
+            try {
+                const d = await apiFetch('/wallet/withdraw', { method: 'POST', body: JSON.stringify({ amount, wallet_address: address }) });
+                showToast(d.message || 'Withdrawal requested!', 'success');
+                closeModal();
+                document.getElementById('withdrawAmount').value = '';
+                document.getElementById('withdrawAddress').value = '';
+                initWallet();
+            } catch (e) {
+                showToast(e.message || 'Withdrawal failed', 'error');
+            } finally {
+                btn.disabled = false; btn.textContent = 'Confirm Withdrawal';
+            }
         }
 
         async function initWallet() {
@@ -171,12 +234,14 @@
                 const w = d.wallet || {};
                 setEl('walletBalance', parseFloat(w.balance || 0).toFixed(4));
                 setEl('walletEarned', parseFloat(w.total_earned || 0).toFixed(4) + ' ETH');
-                setEl('walletPending', w.pending_count + ' pending');
+                setEl('walletPending', (w.pending_count || 0) + ' pending');
                 setEl('totalEarned', parseFloat(w.total_earned || 0).toFixed(4) + ' ETH');
                 setEl('totalSpent', parseFloat(w.total_spent || 0).toFixed(4) + ' ETH');
                 setEl('txCount', (d.transactions || []).length + '');
                 renderTxList(d.transactions || []);
-            } catch (err) { }
+            } catch (err) {
+                showToast('Could not load wallet data', 'error');
+            }
         }
 
         function renderTxList(txs) {
@@ -186,15 +251,19 @@
                 el.innerHTML = '<div class="empty-state"><span class="empty-state-icon">&#128176;</span><p class="empty-state-text">No transactions yet.</p></div>';
                 return;
             }
-            setEl('txCount', txs.length + '+');
+            setEl('txCount', txs.length + '');
             el.innerHTML = txs.map(t => {
                 const credit = t.type === 'credit' || t.type === 'deposit';
-                return `<div class="sidebar-info-row" style="padding:12px 0;border-bottom:1px solid var(--border-color);">
-                <div>
-                    <div style="font-size:0.875rem;font-weight:600;">${escapeHtml(t.description || t.type)}</div>
-                    <div style="font-size:0.75rem;color:var(--text-muted);margin-top:2px;">${timeAgo(t.created_at)} &middot; <span class="badge badge-${t.status}">${t.status}</span></div>
+                const icons = { deposit: '&#11015;', credit: '&#10003;', withdrawal: '&#11014;', debit: '&#11014;' };
+                return `<div class="sidebar-info-row" style="padding:14px 0;border-bottom:1px solid var(--border-color);">
+                <div style="display:flex;align-items:center;gap:12px;">
+                    <div style="width:38px;height:38px;border-radius:10px;background:${credit ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)'};display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;">${icons[t.type] || '&#128176;'}</div>
+                    <div>
+                        <div style="font-size:0.875rem;font-weight:600;">${escapeHtml(t.description || t.type)}</div>
+                        <div style="font-size:0.75rem;color:var(--text-muted);margin-top:2px;">${timeAgo(t.created_at)} &middot; <span class="badge badge-${t.status || 'completed'}">${t.status || 'completed'}</span></div>
+                    </div>
                 </div>
-                <div style="color:${credit ? 'var(--success)' : 'var(--error)'};font-weight:700;font-family:'Space Grotesk',sans-serif;font-size:0.95rem;">
+                <div style="color:${credit ? 'var(--success)' : 'var(--error)'};font-weight:700;font-family:'Space Grotesk',sans-serif;font-size:1rem;text-align:right;">
                     ${credit ? '+' : '-'}${parseFloat(t.amount).toFixed(4)} ETH
                 </div>
             </div>`;
@@ -205,7 +274,7 @@
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             if (btn) btn.classList.add('active');
             try {
-                const d = await apiFetch(`/wallet/transactions${type ? '?type=' + type : ''}`);
+                const d = await apiFetch('/wallet/transactions' + (type ? '?type=' + type : ''));
                 renderTxList(d.transactions || []);
             } catch (e) { }
         }

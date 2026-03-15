@@ -1,0 +1,1 @@
+reset_expires, rating, total_reviews, total_earnings, total_spent, is_online, last_seen, created_at, updated_at, hourly_rate, verification_expires, is_verified, id, website, github, email, password, full_name, role, avatar, bio, skills, wallet_address, verification_token, reset_token, location, title

@@ -319,3 +319,51 @@
     }
 
 })();
+
+/* ── Navbar Scroll Effect ──────────────────────────────────────────────── */
+(function () {
+    const navbar = document.querySelector('.navbar');
+    if (!navbar) return;
+    const onScroll = () => {
+        if (window.scrollY > 20) {
+            navbar.classList.add('navbar-scrolled');
+        } else {
+            navbar.classList.remove('navbar-scrolled');
+        }
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+})();
+
+/* ── Scroll Progress Bar ────────────────────────────────────────────────── */
+(function () {
+    const bar = document.createElement('div');
+    bar.className = 'scroll-progress';
+    bar.style.cssText = 'position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,#7c3aed,#06b6d4);z-index:9999;transition:width 0.1s linear;width:0%;pointer-events:none;';
+    document.body.appendChild(bar);
+
+    window.addEventListener('scroll', () => {
+        const scrollTop = window.scrollY;
+        const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        const pct = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+        bar.style.width = Math.min(pct, 100) + '%';
+    }, { passive: true });
+})();
+
+/* ── Reveal on Scroll ────────────────────────────────────────────────────── */
+(function () {
+    if (!('IntersectionObserver' in window)) return;
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(e => {
+            if (e.isIntersecting) {
+                e.target.classList.add('visible');
+                observer.unobserve(e.target);
+            }
+        });
+    }, { threshold: 0.12 });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+    });
+})();

@@ -1,0 +1,367 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   FreelancerHub — UI/UX Enhancement Patch (High-Class Design Update)
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ─── Enhanced keyframe animations ──────────────────────────────────────── */
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-12px); }
+}
+
+@keyframes glow-pulse {
+    0%, 100% { box-shadow: 0 0 20px rgba(124, 58, 237, 0.3); }
+    50% { box-shadow: 0 0 40px rgba(124, 58, 237, 0.6), 0 0 80px rgba(6, 182, 212, 0.2); }
+}
+
+@keyframes borderGlow {
+    0%, 100% { border-color: rgba(124, 58, 237, 0.2); }
+    50% { border-color: rgba(124, 58, 237, 0.5); }
+}
+
+@keyframes countUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Orb decoration ─────────────────────────────────────────────────────── */
+.orb-mid {
+    position: fixed;
+    top: 40%;
+    right: -15vw;
+    width: 40vw;
+    height: 40vw;
+    border-radius: 50%;
+    background: radial-gradient(ellipse, rgba(6, 182, 212, 0.04) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+    animation: float 8s ease-in-out infinite;
+}
+
+/* ─── Navbar scroll state ─────────────────────────────────────────────────── */
+.navbar-scrolled {
+    background: rgba(5, 8, 22, 0.98) !important;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+}
+
+/* ─── Wallet balance gradient text ───────────────────────────────────────── */
+.wallet-balance-card {
+    box-shadow: 0 20px 60px rgba(124, 58, 237, 0.15), 0 0 0 1px rgba(124, 58, 237, 0.1);
+    transition: all 280ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.wallet-balance-card:hover {
+    box-shadow: 0 24px 80px rgba(124, 58, 237, 0.22), 0 0 0 1px rgba(124, 58, 237, 0.18);
+}
+
+.wallet-balance-amount {
+    background: linear-gradient(135deg, #7c3aed 0%, #06b6d4 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.wallet-balance-amount span:first-child {
+    color: #06b6d4;
+    -webkit-text-fill-color: #06b6d4;
+    margin-right: 6px;
+}
+
+/* ─── Improved job cards ──────────────────────────────────────────────────── */
+.job-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 18px;
+    background: radial-gradient(ellipse at 50% 0%, rgba(124, 58, 237, 0.06), transparent 70%);
+    opacity: 0;
+    transition: opacity 280ms cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+}
+
+.job-card:hover::after {
+    opacity: 1;
+}
+
+/* ─── Notification item improvements ─────────────────────────────────────── */
+.notification-item {
+    position: relative;
+    overflow: hidden;
+    transition: transform 150ms cubic-bezier(0.4, 0, 0.2, 1), background 150ms, border-color 150ms;
+}
+
+.notification-item::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; bottom: 0;
+    width: 3px;
+    background: linear-gradient(135deg, #7c3aed 0%, #06b6d4 100%);
+    opacity: 0;
+    transition: opacity 150ms;
+}
+
+.notification-item.unread::before {
+    opacity: 1;
+}
+
+.notification-item:hover {
+    transform: translateX(4px);
+}
+
+/* ─── Chat enhancements ───────────────────────────────────────────────────── */
+.conversation-item {
+    border: 1px solid transparent;
+    transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.conversation-item:hover {
+    border-color: rgba(124, 58, 237, 0.15);
+    background: rgba(124, 58, 237, 0.08) !important;
+}
+
+.conversation-item.active {
+    border-color: rgba(124, 58, 237, 0.25);
+    background: rgba(124, 58, 237, 0.12) !important;
+}
+
+.message {
+    position: relative;
+    animation: fadeInUp 0.2s ease;
+}
+
+.message-sent {
+    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+}
+
+.message-received {
+    border: 1px solid rgba(124, 58, 237, 0.1);
+}
+
+/* Chat empty state improvement */
+.chat-empty {
+    background: radial-gradient(ellipse at 50% 40%, rgba(124, 58, 237, 0.04), transparent 70%);
+}
+
+/* ─── Skeleton loading ────────────────────────────────────────────────────── */
+.skeleton {
+    background: linear-gradient(90deg, 
+        rgba(12, 20, 40, 0.8) 25%, 
+        rgba(17, 29, 53, 0.9) 50%, 
+        rgba(12, 20, 40, 0.8) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 8px;
+    height: 16px;
+}
+
+/* ─── Stat cards ─────────────────────────────────────────────────────────── */
+.stat-card:nth-child(1) { animation-delay: 0.05s; }
+.stat-card:nth-child(2) { animation-delay: 0.1s; }
+.stat-card:nth-child(3) { animation-delay: 0.15s; }
+.stat-card:nth-child(4) { animation-delay: 0.2s; }
+
+/* ─── Enhanced scroll bar across the site ────────────────────────────────── */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(124, 58, 237, 0.4) transparent;
+}
+
+/* ─── Page entrance animation ────────────────────────────────────────────── */
+main.main-content {
+    animation: fadeIn 0.35s ease both;
+}
+
+/* ─── Improved modal animation (spring effect) ───────────────────────────── */
+.modal-overlay.show .modal {
+    animation: springUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes springUp {
+    from { opacity: 0; transform: translateY(40px) scale(0.96); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ─── Improved form inputs ──────────────────────────────────────────────── */
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+    transform: translateY(-1px);
+}
+
+/* ─── Profile avatar glow ────────────────────────────────────────────────── */
+.profile-avatar-lg {
+    animation: glow-pulse 3s ease-in-out infinite;
+}
+
+/* ─── Better proposal cards ──────────────────────────────────────────────── */
+.proposal-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.proposal-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(124, 58, 237, 0.3), transparent);
+    opacity: 0;
+    transition: opacity 280ms;
+}
+
+.proposal-card:hover::before {
+    opacity: 1;
+}
+
+/* ─── Dashboard stat numbers ─────────────────────────────────────────────── */
+.dash-stat-value {
+    animation: countUp 0.5s ease both;
+}
+
+/* ─── Input with icons ───────────────────────────────────────────────────── */
+.input-group {
+    position: relative;
+}
+
+.input-group .form-input {
+    padding-left: 44px;
+}
+
+.input-group .input-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    font-size: 1rem;
+    pointer-events: none;
+}
+
+/* ─── Improved empty states ──────────────────────────────────────────────── */
+.empty-state {
+    animation: fadeIn 0.4s ease;
+}
+
+/* ─── Enhanced auth card ─────────────────────────────────────────────────── */
+.auth-card {
+    backdrop-filter: blur(24px);
+}
+
+/* ─── Glow on primary button hover ──────────────────────────────────────── */
+.btn-primary:hover {
+    filter: brightness(1.1);
+}
+
+/* ─── Card inner glow ────────────────────────────────────────────────────── */
+.card {
+    position: relative;
+}
+
+.card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.04), transparent 60%);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 280ms;
+}
+
+.card:hover::after {
+    opacity: 1;
+}
+
+/* ─── Reveal on scroll ───────────────────────────────────────────────────── */
+.reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* ─── Tab group improvement ──────────────────────────────────────────────── */
+.tab-group {
+    backdrop-filter: blur(8px);
+}
+
+/* ─── Chat no conversations state ────────────────────────────────────────── */
+#conversationList .empty-state {
+    padding: 30px 16px;
+    font-size: 0.85rem;
+    line-height: 1.6;
+}
+
+/* ─── Notification list gap ──────────────────────────────────────────────── */
+#notifList {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* ─── Improved badge in nav ──────────────────────────────────────────────── */
+.nav-badge {
+    animation: fadeIn 0.3s ease;
+    vertical-align: middle;
+    position: relative;
+    top: -1px;
+}
+
+/* ─── Responsive: Mobile chat back button ────────────────────────────────── */
+@media (max-width: 768px) {
+    .chat-back-btn {
+        display: flex !important;
+    }
+}
+
+.chat-back-btn {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 8px;
+    transition: all 150ms;
+}
+
+.chat-back-btn:hover {
+    background: rgba(124, 58, 237, 0.1);
+    color: var(--text-primary);
+}
+
+/* ─── Toast container improvements ───────────────────────────────────────── */
+.toast {
+    border-left: 3px solid;
+}
+
+.toast-success { border-left-color: #10b981; }
+.toast-error { border-left-color: #ef4444; }
+.toast-info { border-left-color: #3b82f6; }
+.toast-warning { border-left-color: #f59e0b; }
+
+/* ─── Spinner size variants ───────────────────────────────────────────────── */
+.loading-spinner-sm {
+    width: 20px;
+    height: 20px;
+    border-width: 2px;
+    display: inline-block;
+    border: 2px solid var(--border-color);
+    border-top-color: var(--accent-primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+/* ─── Focus ring improvements (accessibility) ────────────────────────────── */
+.btn:focus-visible,
+.form-input:focus-visible {
+    outline: 2px solid rgba(124, 58, 237, 0.6);
+    outline-offset: 3px;
+}
