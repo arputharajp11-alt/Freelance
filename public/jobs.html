@@ -7,10 +7,157 @@
     <meta name="description"
         content="Browse freelance jobs on FreelancerHub — find blockchain, design, development, and more.">
     <title>Browse Jobs — FreelancerHub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="/css/advanced.css">
     <link rel="stylesheet" href="/css/theme.css">
     <link rel="stylesheet" href="/css/enhancements.css">
+    <style>
+        /* ── Page Specific Premium Overrides ─────────────────────────────── */
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        
+        .page-header {
+            padding: 80px 0 60px;
+            background: linear-gradient(180deg, rgba(124,58,237,0.06) 0%, transparent 100%);
+            border-bottom: 1px solid rgba(124,58,237,0.1);
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 40px;
+        }
+
+        .page-header::before {
+            content: '';
+            position: absolute;
+            top: -100px;
+            right: -100px;
+            width: 400px;
+            height: 400px;
+            border-radius: 50%;
+            background: radial-gradient(ellipse, rgba(6,182,212,0.1), transparent 70%);
+            pointer-events: none;
+        }
+
+        .jobs-search-container {
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .jobs-title {
+            font-size: clamp(2rem, 4vw, 3rem);
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 800;
+            margin-bottom: 16px;
+        }
+
+        .jobs-subtitle {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 40px;
+        }
+
+        .premium-filter-bar {
+            background: rgba(20,25,45,0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(124,58,237,0.2);
+            border-radius: 24px;
+            padding: 12px;
+            display: flex;
+            gap: 12px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            flex-wrap: wrap;
+        }
+
+        .premium-filter-bar .form-input,
+        .premium-filter-bar .form-select {
+            border: 1px solid transparent;
+            background: rgba(255,255,255,0.04);
+            border-radius: 12px;
+            padding: 14px 20px;
+            font-size: 0.95rem;
+            flex: 1;
+            min-width: 150px;
+            transition: all 200ms;
+            color: var(--text-primary);
+        }
+
+        .premium-filter-bar .form-input:focus,
+        .premium-filter-bar .form-select:focus {
+            background: rgba(124,58,237,0.1);
+            border-color: rgba(124,58,237,0.4);
+            outline: none;
+        }
+
+        .premium-filter-bar .search-input {
+            flex: 2;
+            min-width: 250px;
+        }
+
+        .job-card {
+            border-radius: 20px;
+            padding: 32px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .job-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(6,182,212,0.4);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(6,182,212,0.1);
+        }
+
+        .job-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+
+        .job-card-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .job-card-budget {
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: #22d3ee;
+            white-space: nowrap;
+        }
+
+        .job-card-desc {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+
+        .job-footer-stats {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border-color);
+            padding-top: 20px;
+        }
+
+        .job-badge {
+            background: rgba(124,58,237,0.15);
+            color: #a78bfa;
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+    </style>
 </head>
 
 <body>
@@ -47,64 +194,61 @@
     <div class="orb-mid"></div>
 
     <main class="main-content">
-        <div class="container" style="padding-top:36px;">
-
-            <!-- Page Header -->
-            <div class="flex-between mb-3">
-                <div>
-                    <h1 style="font-size:1.9rem;font-weight:800;font-family:'Space Grotesk',sans-serif;">
-                        &#128188; Browse Jobs
-                    </h1>
-                    <p style="color:var(--text-secondary);font-size:0.875rem;margin-top:4px;">
-                        Find your next project — <span id="jobCount">loading...</span>
-                    </p>
+        <!-- Page Header -->
+        <header class="page-header">
+            <div class="container jobs-search-container">
+                <h1 class="jobs-title">Available <span class="gradient-text">Opportunities</span></h1>
+                <p class="jobs-subtitle">Find your next project — <strong id="jobCount" style="color:var(--text-primary);">loading...</strong></p>
+                
+                <div class="premium-filter-bar reveal">
+                    <input type="search" class="form-input search-input" id="searchInput"
+                        placeholder="&#128269; Search by title, skill, or keyword..." oninput="filterJobs()">
+    
+                    <select class="form-select" id="categoryFilter" onchange="filterJobs()">
+                        <option value="">All Categories</option>
+                        <option>Blockchain</option>
+                        <option>Web Development</option>
+                        <option>Mobile Development</option>
+                        <option>Design</option>
+                        <option>Writing</option>
+                        <option>Marketing</option>
+                        <option>Data Science</option>
+                        <option>DevOps</option>
+                        <option>Video & Animation</option>
+                        <option>Cybersecurity</option>
+                        <option>GameDev</option>
+                    </select>
+    
+                    <select class="form-select" id="experienceFilter" onchange="filterJobs()">
+                        <option value="">Any Level</option>
+                        <option value="beginner">Beginner</option>
+                        <option value="intermediate">Intermediate</option>
+                        <option value="expert">Expert</option>
+                    </select>
+    
+                    <select class="form-select" id="budgetFilter" onchange="filterJobs()">
+                        <option value="">Any Budget</option>
+                        <option value="fixed">Fixed Price</option>
+                        <option value="hourly">Hourly Rate</option>
+                    </select>
                 </div>
-                <a href="/post-job.html" class="btn btn-primary" id="postJobBtn" style="display:none;">
-                    &#43; Post a Job
-                </a>
+                
+                <div style="margin-top: 32px; text-align: right;">
+                    <a href="/post-job.html" class="btn btn-primary" id="postJobBtn" style="display:none;">
+                        &#43; Post a New Job
+                    </a>
+                </div>
             </div>
+        </header>
 
-            <!-- Filters -->
-            <div class="filter-bar">
-                <input type="search" class="form-input" id="searchInput"
-                    placeholder="&#128269; Search by title or keyword..." oninput="filterJobs()"
-                    style="flex:2;min-width:220px;">
-
-                <select class="form-select" id="categoryFilter" onchange="filterJobs()">
-                    <option value="">All Categories</option>
-                    <option>Web Development</option>
-                    <option>Mobile Development</option>
-                    <option>Design</option>
-                    <option>Writing</option>
-                    <option>Marketing</option>
-                    <option>Data Science</option>
-                    <option>Blockchain</option>
-                    <option>DevOps</option>
-                    <option>Video & Animation</option>
-                </select>
-
-                <select class="form-select" id="experienceFilter" onchange="filterJobs()">
-                    <option value="">Any Level</option>
-                    <option value="beginner">Beginner</option>
-                    <option value="intermediate">Intermediate</option>
-                    <option value="expert">Expert</option>
-                </select>
-
-                <select class="form-select" id="budgetFilter" onchange="filterJobs()">
-                    <option value="">Any Budget</option>
-                    <option value="fixed">Fixed Price</option>
-                    <option value="hourly">Hourly Rate</option>
-                </select>
-            </div>
-
+        <div class="container" style="padding-bottom: 80px;">
             <!-- Grid -->
             <div class="jobs-grid" id="jobsGrid">
                 <div class="loading-overlay">
                     <div class="loading-spinner"></div>
-                    <span>Loading jobs...</span>
+                    <span>Loading premium opportunities...</span>
                 </div>
             </div>
-
         </div>
     </main>
 
@@ -118,14 +262,37 @@
     <script src="/js/theme.js"></script>
     <script src="/js/app.js"></script>
     <script>
-        // Show post job button only for clients
+        // Check for role
         const u = getUser();
-        if (u && u.role === 'client') document.getElementById('postJobBtn').style.display = '';
+        if (u && u.role === 'client') {
+            document.getElementById('postJobBtn').style.display = 'inline-flex';
+        }
+
+        // Check if there's a category in the URL to pre-fill the filter
+        const urlParams = new URLSearchParams(window.location.search);
+        const prefillCategory = urlParams.get('cat');
+        if (prefillCategory) {
+            const catSelect = document.getElementById('categoryFilter');
+            for (let i=0; i < catSelect.options.length; i++) {
+                if (catSelect.options[i].value === prefillCategory) {
+                    catSelect.selectedIndex = i;
+                    break;
+                }
+            }
+        }
 
         loadJobs();
 
-        // Override filterJobs to also handle experience/budget type filters
-        const _orig = filterJobs;
+        // Reveal on scroll
+        document.addEventListener('DOMContentLoaded', () => {
+            const obs = new IntersectionObserver(es => es.forEach(e => { 
+                if (e.isIntersecting) e.target.classList.add('visible'); 
+            }), { threshold: 0.1 });
+            document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+        });
+
+        // Custom filter function override
+        const _origFilter = filterJobs;
         function filterJobs() {
             const q = (document.getElementById('searchInput')?.value || '').toLowerCase();
             const cat = document.getElementById('categoryFilter')?.value || '';
@@ -144,7 +311,34 @@
             const el = document.getElementById('jobCount');
             if (el) el.textContent = `${filtered.length} job${filtered.length !== 1 ? 's' : ''} found`;
         }
+
+        // Custom override for renderJobs to output high-class premium cards
+        function renderJobs(jobs) {
+            const grid = document.getElementById('jobsGrid');
+            if (!jobs || jobs.length === 0) {
+                grid.innerHTML = '<div class="empty-state reveal visible"><div class="empty-icon">🔍</div><p>No opportunities found matching your criteria.</p></div>';
+                return;
+            }
+
+            grid.innerHTML = jobs.map(j => `
+                <a href="/jobs.html?jobId=${j.id}" class="job-card reveal visible" style="text-decoration: none; display: block; color: inherit;">
+                    <div class="job-card-header">
+                        <div>
+                            <div class="job-badge">${j.category || 'Software'}</div>
+                            <h3 class="job-card-title" style="margin-top:12px;">${j.title}</h3>
+                        </div>
+                        <div class="job-card-budget">${j.budget_min}–${j.budget_max} ETH</div>
+                    </div>
+                    <p class="job-card-desc">${j.description.length > 150 ? j.description.substring(0, 150) + '...' : j.description}</p>
+                    <div class="job-footer-stats">
+                        <span>📊 ${j.experience_level.charAt(0).toUpperCase() + j.experience_level.slice(1)}</span>
+                        <span>⏱ ${j.budget_type === 'hourly' ? 'Hourly Rate' : 'Fixed Price'}</span>
+                        <span style="margin-left:auto;color:var(--accent-secondary);font-weight:600;">View Details →</span>
+                    </div>
+                </a>
+            `).join('');
+        }
     </script>
 </body>
 
-</html>
+</html>
