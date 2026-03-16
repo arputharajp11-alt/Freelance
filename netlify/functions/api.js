@@ -28,9 +28,14 @@ let _sqlClients = [];
 function getSqlClients() {
     if (_sqlClients.length > 0) return _sqlClients;
     
-    // Add primary from Env if available
+    // Prioritize DB 1 as primary
+    const urls = [...DB_REPLICAS];
+    
+    // Add env URL if it's not already in the list
     const envUrl = process.env.DATABASE_URL;
-    const urls = envUrl ? [envUrl, ...DB_REPLICAS] : DB_REPLICAS;
+    if (envUrl && !urls.includes(envUrl)) {
+        urls.push(envUrl);
+    }
     
     _sqlClients = urls.map(url => ({
         url,
