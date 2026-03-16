@@ -17,29 +17,48 @@ const { neon } = require('@neondatabase/serverless');
 
 // Lazily initialize the Neon client so a missing DATABASE_URL doesn't crash
 // the entire Lambda at module-load time (which would make EVERY route 502).
-let _sql = null;
-const DEFAULT_DATABASE_URL = 'postgresql://neondb_owner:npg_oAg85XMWTYyq@ep-young-sun-a8tlerv1-pooler.eastus2.azure.neon.tech/neondb?sslmode=require&channel_binding=require';
+const DB_REPLICAS = [
+    'postgresql://neondb_owner:npg_dosGg6JuPeh8@ep-morning-sunset-ad9jl49v-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require',
+    'postgresql://neondb_owner:npg_EaWh5NQO3RxD@ep-rapid-shape-a85pl2zm-pooler.eastus2.azure.neon.tech/neondb?sslmode=require&channel_binding=require',
+    'postgresql://neondb_owner:npg_yw2sMjXOm7eK@ep-fragrant-paper-abfu385z-pooler.eu-west-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require'
+];
 
-function getSql() {
-    const dbUrl = process.env.DATABASE_URL || DEFAULT_DATABASE_URL;
-    if (!dbUrl) {
-        throw new Error('DATABASE_URL environment variable is not set. Please configure it in the Netlify dashboard under Site Settings → Environment Variables.');
-    }
-    if (!_sql) {
-        _sql = neon(dbUrl);
-    }
-    return _sql;
+let _sqlClients = [];
+
+function getSqlClients() {
+    if (_sqlClients.length > 0) return _sqlClients;
+    
+    // Add primary from Env if available
+    const envUrl = process.env.DATABASE_URL;
+    const urls = envUrl ? [envUrl, ...DB_REPLICAS] : DB_REPLICAS;
+    
+    _sqlClients = urls.map(url => ({
+        url,
+        execute: neon(url)
+    }));
+    return _sqlClients;
 }
 
-// ── Universal query helper ─────────────────────────────────────────────────
 async function query(queryText, params = []) {
-    const sql = getSql();
-    const result = await sql(queryText, params);
-    return {
-        rows: result,
-        rowCount: result.length,
-        lastInsertRowid: result[0]?.id ?? null,
-    };
+    const clients = getSqlClients();
+    let lastError = null;
+
+    for (const client of clients) {
+        try {
+            const result = await client.execute(queryText, params);
+            return {
+                rows: result,
+                rowCount: result.length,
+                lastInsertRowid: result[0]?.id ?? null,
+            };
+        } catch (err) {
+            console.error(`[DB Failover] Failed on ${client.url.split('@')[1]}:`, err.message);
+            lastError = err;
+            // Continue to next replica
+        }
+    }
+
+    throw new Error(`All database replicas failed. Last error: ${lastError?.message}`);
 }
 
 // ── JWT helpers ───────────────────────────────────────────────────────────
@@ -1072,26 +1091,27 @@ app.get('/api/chat/unread', authenticate, async (req, res) => {
 // ============================================================
 
 app.get('/api/health', async (req, res) => {
-    const dbUrl = process.env.DATABASE_URL || DEFAULT_DATABASE_URL;
-    const dbConfigured = !!dbUrl;
+    const clients = getSqlClients();
     let dbOk = false;
-    let dbError = null;
-    if (dbConfigured) {
+    let dbDetails = [];
+
+    for (const client of clients) {
         try {
-            await query('SELECT 1');
+            await client.execute('SELECT 1');
+            dbDetails.push({ url: client.url.split('@')[1], status: 'connected' });
             dbOk = true;
         } catch (e) {
-            dbError = e.message;
+            dbDetails.push({ url: client.url.split('@')[1], status: 'error', error: e.message });
         }
     }
 
     const transporter = getTransporter();
     const emailConfigured = !!transporter;
 
-    res.status(dbOk || !dbConfigured ? 200 : 503).json({
-        status: dbOk ? 'ok' : (dbConfigured ? 'db_error' : 'no_database_url'),
+    res.status(dbOk ? 200 : 503).json({
+        status: dbOk ? 'ok' : 'all_dbs_failed',
         timestamp: new Date().toISOString(),
-        database: dbConfigured ? (dbOk ? 'connected' : `error: ${dbError}`) : 'DATABASE_URL not set',
+        databases: dbDetails,
         email: emailConfigured ? `configured (${process.env.EMAIL_USER || 'arjuninfosolution0711@gmail.com'})` : 'not configured',
     });
 });
@@ -1238,12 +1258,6 @@ async function ensureTablesExist() {
         )
     `.split(';').map(s => s.trim()).filter(s => s.length > 0);
 
-    const sqlFn = getSql();
-    for (const stmt of statements) {
-        try { await sqlFn(stmt); } catch (e) { /* table may already exist */ }
-    }
-
-    // ── Schema migrations: add columns that may be missing on older DB instances ──
     const migrations = [
         `ALTER TABLE users ADD COLUMN IF NOT EXISTS location TEXT DEFAULT ''`,
         `ALTER TABLE users ADD COLUMN IF NOT EXISTS title TEXT DEFAULT ''`,
@@ -1264,16 +1278,26 @@ async function ensureTablesExist() {
         `ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token TEXT DEFAULT NULL`,
         `ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_expires TIMESTAMPTZ DEFAULT NULL`,
     ];
-    for (const m of migrations) {
-        try { await sqlFn(m); } catch (e) { /* column may already exist */ }
+
+    const clients = getSqlClients();
+    for (const client of clients) {
+        const sqlFn = client.execute;
+        console.log(`[DB Init] Ensuring tables on ${client.url.split('@')[1]}`);
+        for (const stmt of statements) {
+            try { await sqlFn(stmt); } catch (e) { /* table may already exist */ }
+        }
+
+        for (const m of migrations) {
+            try { await sqlFn(m); } catch (e) { /* column may already exist */ }
+        }
     }
 }
 
 // ── Initialise DB tables on cold start (runs once per Lambda container) ─────
 // Skip silently if DATABASE_URL is not yet configured (avoid crash on cold start)
-const initPromise = (process.env.DATABASE_URL || DEFAULT_DATABASE_URL)
-    ? ensureTablesExist().catch(err => { console.error('DB init error on cold start:', err.message); })
-    : Promise.resolve();
+const initPromise = ensureTablesExist().catch(err => { 
+    console.error('DB init error on cold start:', err.message); 
+});
 
 // ── Netlify Function export ───────────────────────────────────────────────
 const handler = serverless(app);
