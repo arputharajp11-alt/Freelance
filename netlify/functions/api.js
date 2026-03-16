@@ -18,12 +18,15 @@ const { neon } = require('@neondatabase/serverless');
 // Lazily initialize the Neon client so a missing DATABASE_URL doesn't crash
 // the entire Lambda at module-load time (which would make EVERY route 502).
 let _sql = null;
+const DEFAULT_DATABASE_URL = 'postgresql://neondb_owner:npg_oAg85XMWTYyq@ep-young-sun-a8tlerv1-pooler.eastus2.azure.neon.tech/neondb?sslmode=require&channel_binding=require';
+
 function getSql() {
-    if (!process.env.DATABASE_URL) {
+    const dbUrl = process.env.DATABASE_URL || DEFAULT_DATABASE_URL;
+    if (!dbUrl) {
         throw new Error('DATABASE_URL environment variable is not set. Please configure it in the Netlify dashboard under Site Settings → Environment Variables.');
     }
     if (!_sql) {
-        _sql = neon(process.env.DATABASE_URL);
+        _sql = neon(dbUrl);
     }
     return _sql;
 }
@@ -1069,7 +1072,8 @@ app.get('/api/chat/unread', authenticate, async (req, res) => {
 // ============================================================
 
 app.get('/api/health', async (req, res) => {
-    const dbConfigured = !!process.env.DATABASE_URL;
+    const dbUrl = process.env.DATABASE_URL || DEFAULT_DATABASE_URL;
+    const dbConfigured = !!dbUrl;
     let dbOk = false;
     let dbError = null;
     if (dbConfigured) {
@@ -1267,7 +1271,7 @@ async function ensureTablesExist() {
 
 // ── Initialise DB tables on cold start (runs once per Lambda container) ─────
 // Skip silently if DATABASE_URL is not yet configured (avoid crash on cold start)
-const initPromise = process.env.DATABASE_URL
+const initPromise = (process.env.DATABASE_URL || DEFAULT_DATABASE_URL)
     ? ensureTablesExist().catch(err => { console.error('DB init error on cold start:', err.message); })
     : Promise.resolve();
 
