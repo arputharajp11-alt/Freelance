@@ -173,30 +173,36 @@
 
             if (statusEl) statusEl.style.display = 'block';
 
-            if (window.ethereum) {
-                try {
-                    await loadWeb3();
-                    const provider = new ethers.BrowserProvider(window.ethereum);
-                    const network = await provider.getNetwork();
-                    const balance = await provider.getBalance(user.wallet_address);
-                    
-                    const nameEl = document.getElementById('networkName');
-                    const indEl = document.getElementById('networkIndicator');
-                    const balEl = document.getElementById('ethBalance');
+            if (statusEl) statusEl.style.display = 'block';
 
-                    if (network.chainId === 5777n) {
-                        nameEl.textContent = 'Ganache (Local Testnet)';
-                        indEl.style.background = '#10b981'; // green
-                        indEl.style.boxShadow = '0 0 12px rgba(16,185,129,0.5)';
-                    } else {
-                        nameEl.textContent = 'Other Network (' + network.name + ')';
-                        indEl.style.background = '#f59e0b'; // amber
-                        indEl.style.boxShadow = '0 0 12px rgba(245,158,11,0.5)';
-                    }
-                    balEl.textContent = parseFloat(ethers.formatEther(balance)).toFixed(4) + ' ETH';
-                } catch (e) {
-                    console.error('Web3 Status Error:', e);
+            try {
+                await loadWeb3();
+                let provider;
+                if (window.ethereum) {
+                    provider = new ethers.BrowserProvider(window.ethereum);
+                } else {
+                    provider = new ethers.JsonRpcProvider('http://127.0.0.1:7545');
                 }
+
+                const network = await provider.getNetwork();
+                const balance = await provider.getBalance(user.wallet_address || '0x0000000000000000000000000000000000000000');
+                
+                const nameEl = document.getElementById('networkName');
+                const indEl = document.getElementById('networkIndicator');
+                const balEl = document.getElementById('ethBalance');
+
+                if (network.chainId === 5777n) {
+                    nameEl.textContent = 'Ganache (Local Testnet)';
+                    indEl.style.background = '#10b981';
+                    indEl.style.boxShadow = '0 0 12px rgba(16,185,129,0.5)';
+                } else {
+                    nameEl.textContent = 'Network: ' + (network.name || network.chainId);
+                    indEl.style.background = '#f59e0b';
+                    indEl.style.boxShadow = '0 0 12px rgba(245,158,11,0.5)';
+                }
+                balEl.textContent = parseFloat(ethers.formatEther(balance)).toFixed(4) + ' ETH';
+            } catch (e) {
+                console.error('Web3 Status Error:', e);
             }
         }
 

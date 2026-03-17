@@ -886,61 +886,91 @@ async function loadWeb3() {
     });
 }
 
+const GANACHE_RPC = 'http://127.0.0.1:7545';
+
 async function connectWallet() {
-    if (!window.ethereum) {
-        showToast('MetaMask not detected. Please install the MetaMask extension.', 'warning');
-        window.open('https://metamask.io/download/', '_blank');
-        return;
-    }
+    let address = null;
+    let provider = null;
 
-    try {
-        await loadWeb3();
-        const provider = new ethers.BrowserProvider(window.ethereum);
-        const accounts = await provider.send("eth_requestAccounts", []);
-        const address = accounts[0];
+    if (window.ethereum) {
+        try {
+            await loadWeb3();
+            provider = new ethers.BrowserProvider(window.ethereum);
+            const accounts = await provider.send("eth_requestAccounts", []);
+            address = accounts[0];
 
-        const network = await provider.getNetwork();
-        if (network.chainId !== 5777n) {
-            try {
-                await window.ethereum.request({
-                    method: 'wallet_switchEthereumChain',
-                    params: [{ chainId: GANACHE_CHAIN_ID }],
-                });
-            } catch (switchError) {
-                if (switchError.code === 4902) {
+            const network = await provider.getNetwork();
+            if (network.chainId !== 5777n) {
+                try {
                     await window.ethereum.request({
-                        method: 'wallet_addEthereumChain',
-                        params: [{
-                            chainId: GANACHE_CHAIN_ID,
-                            chainName: 'Ganache Local',
-                            rpcUrls: ['http://127.0.0.1:7545'],
-                            nativeCurrency: { name: 'Ethereum', symbol: 'ETH', decimals: 18 }
-                        }]
+                        method: 'wallet_switchEthereumChain',
+                        params: [{ chainId: GANACHE_CHAIN_ID }],
                     });
-                } else {
-                    showToast('Please switch to the Ganache network in MetaMask.', 'warning');
+                } catch (switchError) {
+                    if (switchError.code === 4902) {
+                        await window.ethereum.request({
+                            method: 'wallet_addEthereumChain',
+                            params: [{
+                                chainId: GANACHE_CHAIN_ID,
+                                chainName: 'Ganache Local',
+                                rpcUrls: [GANACHE_RPC],
+                                nativeCurrency: { name: 'Ethereum', symbol: 'ETH', decimals: 18 }
+                            }]
+                        });
+                    } else {
+                        showToast('Please switch to the Ganache network in MetaMask.', 'warning');
+                    }
                 }
             }
+        } catch (error) {
+            console.error('MetaMask Error:', error);
+            showToast('MetaMask connection failed', 'error');
+            // Continue to fallback
         }
+    }
 
-        await apiFetch('/auth/profile', {
-            method: 'PUT',
-            body: JSON.stringify({ wallet_address: address })
-        });
-
-        const user = getUser();
-        if (user) {
-            user.wallet_address = address;
-            setUser(user);
+    // Fallback to local Ganache RPC if MetaMask fails or is missing
+    if (!address) {
+        try {
+            await loadWeb3();
+            provider = new ethers.JsonRpcProvider(GANACHE_RPC);
+            const accounts = await provider.listAccounts();
+            if (accounts && accounts.length > 0) {
+                // Use first account as simulation
+                address = accounts[0].address || accounts[0]; 
+                showToast('Connecting via Ganache RPC (No MetaMask)', 'info');
+            } else {
+                throw new Error('No accounts found on Ganache');
+            }
+        } catch (e) {
+            console.error('Ganache RPC Error:', e);
+            if (!window.ethereum) {
+                showToast('Blockchain connection failed. Ensure Ganache is running on :7545', 'error');
+            }
+            return null;
         }
+    }
 
-        showToast(`Wallet connected: ${address.substring(0, 6)}...`, 'success');
-        updateNav();
-        if (typeof loadWallet === 'function') loadWallet();
-        return address;
-    } catch (error) {
-        console.error('Wallet error:', error);
-        showToast('Connection failed: ' + error.message, 'error');
+    if (address) {
+        try {
+            await apiFetch('/auth/profile', {
+                method: 'PUT',
+                body: JSON.stringify({ wallet_address: address })
+            });
+
+            const user = getUser();
+            if (user) {
+                user.wallet_address = address;
+                setUser(user);
+            }
+
+            showToast(`Wallet connected: ${address.substring(0, 6)}...`, 'success');
+            updateNav();
+            if (typeof loadWallet === 'function') loadWallet();
+            return address;
+        } catch (e) {
+            showToast('Failed to update profile wallet', 'error');
+        }
     }
 }
 
