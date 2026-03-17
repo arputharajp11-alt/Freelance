@@ -4,6 +4,7 @@
 
 // API base — set by /js/config.js (auto-detects local vs production)
 const API_BASE = (typeof window !== 'undefined' && window.FH_API_BASE) ? window.FH_API_BASE : '/api';
+let socket = null;
 
 // ── Token / User storage ─────────────────────────────────────────────────
 const TOKEN_KEY = 'fh_token';
@@ -144,16 +145,31 @@ function updateNav() {
     const navRegister = document.getElementById('navRegister');
     const navUser = document.getElementById('navUser');
     const navAvatar = document.getElementById('navAvatar');
+    const walletBtn = document.getElementById('navWalletBtn');
 
     if (user) {
         if (navLogin) navLogin.style.display = 'none';
         if (navRegister) navRegister.style.display = 'none';
         if (navUser) navUser.style.display = 'flex';
         if (navAvatar) navAvatar.textContent = (user.full_name || user.email || 'U').charAt(0).toUpperCase();
+
+        if (walletBtn) {
+            walletBtn.style.display = 'flex';
+            if (user.wallet_address) {
+                walletBtn.innerHTML = `<span class="btn-icon">💳</span> <span class="btn-text">${user.wallet_address.substring(0, 6)}...${user.wallet_address.substring(38)}</span>`;
+                walletBtn.className = 'btn btn-outline btn-sm wallet-connected';
+                walletBtn.onclick = () => window.location.href = '/wallet.html';
+            } else {
+                walletBtn.innerHTML = `<span class="btn-icon">🔌</span> <span class="btn-text">Connect Wallet</span>`;
+                walletBtn.className = 'btn btn-primary btn-sm';
+                walletBtn.onclick = connectWallet;
+            }
+        }
     } else {
         if (navLogin) navLogin.style.display = '';
         if (navRegister) navRegister.style.display = '';
         if (navUser) navUser.style.display = 'none';
+        if (walletBtn) walletBtn.style.display = 'none';
     }
 }
 
@@ -438,8 +454,9 @@ function loadJobDetail() {
                         <div class="sidebar-info-row"><span class="label">Level</span><span class="value">${escapeHtml(j.experience_level || 'Any')}</span></div>
                         <div class="sidebar-info-row"><span class="label">Proposals</span><span class="value">${j.proposal_count || 0}</span></div>
                     </div>
-                    ${isFreelancer && j.status === 'open' ? `<button class="btn btn-primary" style="width:100%;margin-top:12px;" onclick="openProposalModal()">✏️ Submit Proposal</button>` : ''}
-                    ${isClient && j.status === 'submitted' ? `<button class="btn btn-primary" style="width:100%;margin-top:12px;" onclick="completeJob(${j.id})">✅ Approve & Release Payment</button>` : ''}
+                     ${isFreelancer && j.status === 'open' ? `<button class="btn btn-primary" style="width:100%;margin-top:12px;" onclick="openProposalModal()">✏️ Submit Proposal</button>` : ''}
+                     ${isClient && j.status === 'submitted' ? `<button class="btn btn-primary" style="width:100%;margin-top:12px;" onclick="completeJob(${j.id})">✅ Approve & Release Payment</button>` : ''}
+                     ${j.status === 'completed' ? `<button class="btn btn-outline" style="width:100%;margin-top:12px;" onclick="openReviewModal('${j.id}', '${isClient ? j.freelancer_id : j.client_id}', '${isClient ? j.freelancer_name : j.client_name}')">⭐ Leave a Review</button>` : ''}
                 </div>
             </div>`;
 
@@ -543,6 +560,58 @@ async function completeJob(jobId) {
         showToast(e.message || 'Failed to complete', 'error');
     }
 }
+
+// ── Review System ────────────────────────────────────────────────────────
+let currentReviewData = null;
+
+function openReviewModal(jobId, targetId, targetName) {
+    currentReviewData = { jobId, targetId };
+    const modal = document.getElementById('reviewModal');
+    if (!modal) return;
+    
+    // Find name element in modal if exists
+    const titleEl = modal.querySelector('h2');
+    if (titleEl) titleEl.textContent = `Review ${targetName}`;
+    
+    modal.classList.add('show');
+}
+
+// Global listener for review form
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('reviewForm');
+    if (!form) return;
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!currentReviewData) return;
+
+        const rating = form.querySelector('input[name="rating"]:checked')?.value;
+        const comment = document.getElementById('reviewComment')?.value?.trim();
+
+        if (!rating) {
+            showToast('Please select a star rating', 'error');
+            return;
+        }
+
+        try {
+            await apiFetch('/reviews', {
+                method: 'POST',
+                body: JSON.stringify({
+                    job_id: currentReviewData.jobId,
+                    target_id: currentReviewData.targetId,
+                    rating: parseInt(rating),
+                    comment: comment
+                })
+            });
+            showToast('✅ Review submitted! Thank you.', 'success');
+            closeModal();
+            form.reset();
+            // Optional: update UI without reload
+        } catch (err) {
+            showToast(err.message || 'Failed to submit review', 'error');
+        }
+    });
+});
 
 function loadProfile() {
     const user = getUser();
@@ -709,10 +778,7 @@ function openConversation(convId, silent = false) {
             // For silent polling skip re-render if count is same
             if (silent && msgs.dataset.msgCount == ms.length) return;
             msgs.dataset.msgCount = ms.length;
-            msgs.innerHTML = ms.length ? ms.map(m => {
-                const sent = String(m.sender_id) === String(user?.id);
-                return `<div class="message message-${sent?'sent':'received'}"><div class="message-text">${escapeHtml(m.message)}</div><div class="message-time">${timeAgo(m.created_at)}</div></div>`;
-            }).join('') : '<div class="empty-state" style="padding:20px"><p>No messages yet. Say hello!</p></div>';
+            msgs.innerHTML = ms.length ? ms.map(m => renderMessage(m, user?.id)).join('') : '<div class="empty-state" style="padding:20px"><p>No messages yet. Say hello!</p></div>';
             msgs.scrollTop = msgs.scrollHeight;
         })
         .catch(() => { if (!silent && msgs) msgs.innerHTML = '<div class="empty-state"><p>Could not load messages.</p></div>'; });
@@ -720,17 +786,82 @@ function openConversation(convId, silent = false) {
 
 function handleMsgKey(e) { if (e.key === 'Enter') sendMessage(); }
 
-function sendMessage() {
+function sendMessage(fileData = null) {
     const inp = document.getElementById('messageInput');
-    const text = inp?.value?.trim();
-    if (!text || !window._activeConvId) { if (!window._activeConvId) showToast('Select a conversation first','error'); return; }
-    inp.value = '';
-    apiFetch('/chat/messages', {
-        method: 'POST',
-        body: JSON.stringify({ conversation_id: window._activeConvId, message: text, receiver_id: 0 })
-    })
-    .then(() => { openConversation(window._activeConvId, true); loadConversations(true); })
-    .catch(e => { inp.value = text; showToast(e.message || 'Failed to send message', 'error'); });
+    const text = fileData ? (fileData.originalName || 'File attachment') : inp?.value?.trim();
+    
+    if (!text || !window._activeConvId) { 
+        if (!window._activeConvId) showToast('Select a conversation first','error'); 
+        return; 
+    }
+
+    const payload = { 
+        conversation_id: window._activeConvId, 
+        message: text,
+        message_type: fileData ? 'file' : 'text',
+        file_url: fileData ? fileData.url : null,
+        file_name: fileData ? fileData.originalName : null
+    };
+
+    if (inp) inp.value = '';
+
+    // Use socket if available, otherwise fallback to API
+    if (socket && socket.connected) {
+        // Find receiver_id from metadata
+        const conv = window._convMeta[window._activeConvId];
+        // Note: socket backend handles finding receiver if not provided, but we can help
+        socket.emit('send_message', { ...payload, receiver_id: 0 }); // 0 means server finds it
+    } else {
+        apiFetch('/chat/messages', {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        })
+        .then(() => { if (!fileData) openConversation(window._activeConvId, true); loadConversations(true); })
+        .catch(e => { if (inp) inp.value = text; showToast(e.message || 'Failed to send message', 'error'); });
+    }
+}
+
+async function uploadChatFile(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) return showToast('File too large (max 10MB)', 'error');
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+        showToast('Uploading file...', 'info');
+        const res = await fetch(`${API_BASE}/upload`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${localStorage.getItem(TOKEN_KEY)}` },
+            body: formData
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+
+        sendMessage(data.file);
+        input.value = '';
+    } catch (e) {
+        showToast(e.message || 'Upload failed', 'error');
+    }
+}
+
+function renderMessage(m, currentUserId) {
+    const sent = String(m.sender_id) === String(currentUserId);
+    let content = escapeHtml(m.message);
+    
+    if (m.message_type === 'file' && m.file_url) {
+        const isImg = /\.(jpg|jpeg|png|gif|webp)$/i.test(m.file_url);
+        content = isImg 
+            ? `<div class="msg-file-img"><img src="${m.file_url}" alt="Attachment" onclick="window.open('${m.file_url}')" style="max-width:200px;cursor:pointer;"></div>`
+            : `<div class="msg-file-link">📎 <a href="${m.file_url}" target="_blank">${escapeHtml(m.file_name || 'View File')}</a></div>`;
+    }
+
+    return `<div class="message message-${sent?'sent':'received'}">
+        <div class="message-text">${content}</div>
+        <div class="message-time">${timeAgo(m.created_at)}</div>
+    </div>`;
 }
 
 // Start chat polling (3s) if on the chat page
@@ -739,6 +870,78 @@ if (document.getElementById('chatMessages')) {
         if (window._activeConvId) openConversation(window._activeConvId, true);
         loadConversations(true);
     }, 3000);
+}
+
+// ── Web3 / MetaMask / Ganache ──────────────────────────────────────────
+const GANACHE_CHAIN_ID = '0x1691'; // 5777
+
+async function loadWeb3() {
+    if (typeof window.ethers !== 'undefined') return true;
+    return new Promise((resolve) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/ethers/6.11.1/ethers.umd.min.js';
+        s.onload = () => resolve(true);
+        s.onerror = () => resolve(false);
+        document.head.appendChild(s);
+    });
+}
+
+async function connectWallet() {
+    if (!window.ethereum) {
+        showToast('MetaMask not detected. Please install the MetaMask extension.', 'warning');
+        window.open('https://metamask.io/download/', '_blank');
+        return;
+    }
+
+    try {
+        await loadWeb3();
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        const accounts = await provider.send("eth_requestAccounts", []);
+        const address = accounts[0];
+
+        const network = await provider.getNetwork();
+        if (network.chainId !== 5777n) {
+            try {
+                await window.ethereum.request({
+                    method: 'wallet_switchEthereumChain',
+                    params: [{ chainId: GANACHE_CHAIN_ID }],
+                });
+            } catch (switchError) {
+                if (switchError.code === 4902) {
+                    await window.ethereum.request({
+                        method: 'wallet_addEthereumChain',
+                        params: [{
+                            chainId: GANACHE_CHAIN_ID,
+                            chainName: 'Ganache Local',
+                            rpcUrls: ['http://127.0.0.1:7545'],
+                            nativeCurrency: { name: 'Ethereum', symbol: 'ETH', decimals: 18 }
+                        }]
+                    });
+                } else {
+                    showToast('Please switch to the Ganache network in MetaMask.', 'warning');
+                }
+            }
+        }
+
+        await apiFetch('/auth/profile', {
+            method: 'PUT',
+            body: JSON.stringify({ wallet_address: address })
+        });
+
+        const user = getUser();
+        if (user) {
+            user.wallet_address = address;
+            setUser(user);
+        }
+
+        showToast(`Wallet connected: ${address.substring(0, 6)}...`, 'success');
+        updateNav();
+        if (typeof loadWallet === 'function') loadWallet();
+        return address;
+    } catch (error) {
+        console.error('Wallet error:', error);
+        showToast('Connection failed: ' + error.message, 'error');
+    }
 }
 
 function postJob(data) {
@@ -763,4 +966,93 @@ document.addEventListener('DOMContentLoaded', () => {
     if (verified === 'success') showToast('Email verified! 🎉', 'success');
     if (verified === 'expired') showToast('Verification link expired. Request a new one.', 'error');
     if (verified === 'invalid') showToast('Invalid verification link.', 'error');
+
+    // Socket.IO Integration
+    if (isLoggedIn()) {
+        initSocket();
+    }
 });
+
+async function loadSocketIO() {
+    if (typeof io !== 'undefined') return true;
+    return new Promise((resolve) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdn.socket.io/4.7.4/socket.io.min.js';
+        s.onload = () => resolve(true);
+        s.onerror = () => resolve(false);
+        document.head.appendChild(s);
+    });
+}
+
+async function initSocket() {
+    if (socket) return;
+    const ok = await loadSocketIO();
+    if (!ok) return console.error('Failed to load Socket.IO client');
+
+    const token = localStorage.getItem('token');
+    // Socket server is on the same host but at the root (not /api)
+    socket = io(window.location.origin, {
+        auth: { token }
+    });
+
+    socket.on('connect', () => {
+        console.log('🔌 Connected to real-time server');
+    });
+
+    socket.on('new_message', (m) => {
+        // If chat UI is active and on this conversation, append message
+        const msgs = document.getElementById('chatMessages');
+        if (msgs && window._activeConvId === m.conversation_id) {
+            const user = getUser();
+            const msgHtml = renderMessage(m, user?.id);
+            
+            // Avoid duplicates if polling is still active (though we should disable it)
+            msgs.innerHTML += msgHtml;
+            msgs.scrollTop = msgs.scrollHeight;
+        }
+        
+        // Refresh conversations list
+        if (typeof loadConversations === 'function') loadConversations(true);
+        fetchUnreadCounts();
+    });
+
+    socket.on('message_notification', (data) => {
+        if (window._activeConvId !== data.conversationId) {
+            showToast(`💬 New message from ${data.senderName}: ${data.message}`, 'info', () => {
+                location.href = `/chat.html?conv=${data.conversationId}`;
+            });
+        }
+    });
+
+    socket.on('user_online', (data) => {
+        updateOnlineStatus(data.userId, true);
+    });
+
+    socket.on('user_offline', (data) => {
+        updateOnlineStatus(data.userId, false);
+    });
+
+    socket.on('user_typing', (data) => {
+        if (window._activeConvId === data.conversationId) {
+            const el = document.getElementById('chatStatus');
+            if (el) el.textContent = `${data.name} is typing...`;
+        }
+    });
+
+    socket.on('user_stop_typing', (data) => {
+        if (window._activeConvId === data.conversationId) {
+            const el = document.getElementById('chatStatus');
+            if (el) el.textContent = '';
+        }
+    });
+}
+
+function updateOnlineStatus(userId, isOnline) {
+    // Update dots in conversation list if present
+    const item = document.querySelector(`.conversation-item[onclick*="'${userId}'"]`) || 
+                 document.querySelector(`.conversation-item[onclick*='"${userId}"']`);
+    const dot = item?.querySelector('.online-dot');
+    if (dot) {
+        dot.style.display = isOnline ? 'block' : 'none';
+    }
+}

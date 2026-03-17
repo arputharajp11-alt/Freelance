@@ -63,10 +63,10 @@ function initializeSocket(io) {
                 }
 
                 const msgResult = await query(`
-                    INSERT INTO messages (conversation_id, sender_id, receiver_id, job_id, message, message_type)
-                    VALUES ($1, $2, $3, $4, $5, $6)
+                    INSERT INTO messages (conversation_id, sender_id, receiver_id, job_id, message, message_type, file_url)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7)
                     RETURNING id
-                `, [convId, userId, receiver_id, job_id || null, message, message_type || 'text']);
+                `, [convId, userId, receiver_id, job_id || null, message, message_type || 'text', data.file_url || null]);
 
                 await query(
                     'UPDATE conversations SET last_message = $1, last_message_at = NOW() WHERE id = $2',

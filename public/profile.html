@@ -756,6 +756,7 @@
             <a href="/login.html" class="btn btn-outline btn-sm" id="navLogin" style="display:none;">Sign In</a>
             <a href="/register.html" class="btn btn-primary btn-sm" id="navRegister" style="display:none;">Get
                 Started</a>
+            <button id="navWalletBtn" class="btn btn-primary btn-sm" style="display:none; margin-right:12px;"></button>
             <div class="nav-dropdown" id="navUser">
                 <div class="nav-avatar" id="navAvatar" onclick="toggleDropdown()">U</div>
                 <div class="nav-dropdown-menu" id="navDropdown">
@@ -859,6 +860,17 @@
 
                     <!-- Info Grid (location, links, wallet) -->
                     <div class="info-grid" id="infoGrid" style="display:none;"></div>
+
+                    <!-- Reviews Section -->
+                    <div id="reviewsSection" style="margin-top:32px;">
+                        <div class="section-divider"></div>
+                        <p class="section-heading">⭐ Client Reviews</p>
+                        <div id="reviewsList" class="reviews-list">
+                            <div class="empty-state" style="padding:20px;">
+                                <p style="font-size:0.85rem;color:var(--text-muted);">No reviews yet.</p>
+                            </div>
+                        </div>
+                    </div>
 
                 </div>
             </div><!-- /profile-card-inner -->
@@ -1096,8 +1108,42 @@
             if (user.website) infoItems.push(`<div class="info-item"><span class="info-icon">🌐</span><a href="${escapeHtml(user.website)}" target="_blank" rel="noopener">${escapeHtml(user.website)}</a></div>`);
             if (user.github) infoItems.push(`<div class="info-item"><span class="info-icon">🐙</span><a href="https://github.com/${escapeHtml(user.github)}" target="_blank" rel="noopener">github.com/${escapeHtml(user.github)}</a></div>`);
             if (user.wallet_address) infoItems.push(`<div class="info-item"><span class="info-icon">🔑</span><span class="wallet-address">${user.wallet_address.slice(0, 10)}…${user.wallet_address.slice(-6)}</span></div>`);
-            if (infoItems.length) { infoGrid.style.display = 'grid'; infoGrid.innerHTML = infoItems.join(''); }
-            else infoGrid.style.display = 'none';
+            if (infoItems.length) {
+                infoGrid.style.display = 'grid';
+                infoGrid.innerHTML = infoItems.join('');
+            } else {
+                infoGrid.style.display = 'none';
+            }
+
+            loadReviews(user.id);
+        }
+
+        async function loadReviews(userId) {
+            const list = document.getElementById('reviewsList');
+            if (!list) return;
+
+            try {
+                const data = await apiFetch(`/reviews/${userId}`);
+                const reviews = data.reviews || [];
+
+                if (reviews.length === 0) {
+                    list.innerHTML = '<div class="empty-state" style="padding:20px;"><p style="font-size:0.85rem;color:var(--text-muted);">No reviews yet.</p></div>';
+                    return;
+                }
+
+                list.innerHTML = reviews.map(r => `
+                    <div class="review-item" style="padding:16px 0;border-bottom:1px solid var(--border-color);">
+                        <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+                            <div style="font-weight:600;font-size:0.9rem;">${escapeHtml(r.reviewer_name)}</div>
+                            <div style="color:var(--warning);">${'⭐'.repeat(r.rating)}</div>
+                        </div>
+                        <p style="font-size:0.85rem;color:var(--text-secondary);margin:0;">${escapeHtml(r.comment || 'No comment.')}</p>
+                        <div style="font-size:0.7rem;color:var(--text-muted);margin-top:8px;">${timeAgo(r.created_at)}</div>
+                    </div>
+                `).join('');
+            } catch (e) {
+                console.error('Failed to load reviews:', e);
+            }
         }
 
         // ── Toggle Edit Panel ──────────────────────────────────────

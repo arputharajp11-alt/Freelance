@@ -95,11 +95,12 @@ router.post('/messages', authenticate, async (req, res) => {
         }
 
         // Insert message
+        const { file_url } = req.body;
         const msgResult = await query(`
-            INSERT INTO messages (conversation_id, sender_id, receiver_id, job_id, message, message_type)
-            VALUES ($1, $2, $3, $4, $5, $6)
+            INSERT INTO messages (conversation_id, sender_id, receiver_id, job_id, message, message_type, file_url)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
             RETURNING id
-        `, [convId, req.user.id, receiver_id, job_id || null, message, message_type || 'text']);
+        `, [convId, req.user.id, receiver_id, job_id || null, message, message_type || 'text', file_url || null]);
 
         // Update conversation last message
         await query(
@@ -123,6 +124,63 @@ router.post('/messages', authenticate, async (req, res) => {
 });
 
 // GET /api/chat/unread
+// POST /api/chat/invite - Client invites freelancer to a job
+router.post('/invite', authenticate, async (req, res) => {
+    try {
+        const { freelancer_id, job_id } = req.body;
+        if (!freelancer_id || !job_id) {
+            return res.status(400).json({ error: 'Freelancer ID and Job ID are required' });
+        }
+
+        // Verify sender is client
+        if (req.user.role !== 'client') {
+            return res.status(403).json({ error: 'Only clients can invite freelancers' });
+        }
+
+        // Verify job belongs to client
+        const jobResult = await query('SELECT * FROM jobs WHERE id = $1 AND client_id = $2', [job_id, req.user.id]);
+        if (jobResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Job not found or not yours' });
+        }
+        const job = jobResult.rows[0];
+
+        const conversationId = `job_${job_id}_${Math.min(req.user.id, freelancer_id)}_${Math.max(req.user.id, freelancer_id)}`;
+
+        // Create conversation
+        await query(`
+            INSERT INTO conversations (id, user1_id, user2_id, job_id)
+            VALUES ($1, $2, $3, $4)
+            ON CONFLICT (id) DO NOTHING
+        `, [conversationId, req.user.id, freelancer_id, job_id]);
+
+        // Send invitation message
+        const message = `Hi! I'd like to invite you to collaborate on my project: "${job.title}". Please take a look and let me know if you're interested!`;
+        
+        const msgResult = await query(`
+            INSERT INTO messages (conversation_id, sender_id, receiver_id, job_id, message, message_type)
+            VALUES ($1, $2, $3, $4, $5, 'system')
+            RETURNING id
+        `, [conversationId, req.user.id, freelancer_id, job_id, message]);
+
+        await query(
+            'UPDATE conversations SET last_message = $1, last_message_at = NOW() WHERE id = $2',
+            [message.substring(0, 100), conversationId]
+        );
+
+        // Notify freelancer
+        const clientName = (await query('SELECT full_name FROM users WHERE id = $1', [req.user.id])).rows[0].full_name;
+        await query(`
+            INSERT INTO notifications (user_id, type, title, message, link)
+            VALUES ($1, 'invitation', $2, $3, $4)
+        `, [freelancer_id, `Invitation from ${clientName}`, `You were invited to: ${job.title}`, `/chat.html?conv=${conversationId}`]);
+
+        res.json({ message: 'Invitation sent!', conversationId });
+    } catch (error) {
+        console.error('Invite error:', error);
+        res.status(500).json({ error: 'Failed to send invitation' });
+    }
+});
+
 router.get('/unread', authenticate, async (req, res) => {
     try {
         const result = await query(

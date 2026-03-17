@@ -26,6 +26,7 @@
             <a href="/login.html" class="btn btn-outline btn-sm" id="navLogin" style="display:none;">Sign In</a>
             <a href="/register.html" class="btn btn-primary btn-sm" id="navRegister" style="display:none;">Get
                 Started</a>
+            <button id="navWalletBtn" class="btn btn-primary btn-sm" style="display:none; margin-right:12px;"></button>
             <div class="nav-dropdown" id="navUser">
                 <div class="nav-avatar" id="navAvatar" onclick="toggleDropdown()">U</div>
                 <div class="nav-dropdown-menu" id="navDropdown">
@@ -149,6 +150,14 @@
                         </div>
                     </div>
 
+                    <div class="form-group">
+                        <label class="form-label" for="jobAttachments">Attachments (optional)</label>
+                        <div id="attachmentsPreview" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;"></div>
+                        <input type="file" id="jobFileInput" style="display:none;" onchange="uploadJobAttachment(this)">
+                        <button type="button" class="btn btn-outline" onclick="document.getElementById('jobFileInput').click()">📎 Add File</button>
+                        <input type="hidden" id="jobAttachments" value="[]">
+                    </div>
+
                     <!-- Actions -->
                     <div style="display:flex;gap:12px;margin-top:8px;">
                         <button type="submit" class="btn btn-primary btn-lg" id="submitJobBtn">
@@ -179,6 +188,38 @@
             setTimeout(() => location.href = '/jobs.html', 1500);
         }
 
+        let uploadedAttachments = [];
+
+        async function uploadJobAttachment(input) {
+            const file = input.files[0];
+            if (!file) return;
+            if (file.size > 10 * 1024 * 1024) return showToast('File too large (max 10MB)', 'error');
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                showToast('Uploading...', 'info');
+                const res = await fetch(`${API_BASE}/upload`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('fh_token')}` },
+                    body: formData
+                });
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+
+                uploadedAttachments.push(data.file.url);
+                const preview = document.getElementById('attachmentsPreview');
+                const chip = document.createElement('div');
+                chip.className = 'skill-tag';
+                chip.innerHTML = `📎 ${escapeHtml(file.name)} <span onclick="this.parentElement.remove(); uploadedAttachments = uploadedAttachments.filter(u => u !== '${data.file.url}')" style="cursor:pointer;margin-left:5px;">×</span>`;
+                preview.appendChild(chip);
+                input.value = '';
+            } catch (e) {
+                showToast(e.message || 'Upload failed', 'error');
+            }
+        }
+
         function handlePostJob(e) {
             e.preventDefault();
             const btn = document.getElementById('submitJobBtn');
@@ -200,7 +241,19 @@
                 btn.disabled = false; btn.textContent = '🚀 Post Job'; return;
             }
 
-            postJob({ title, description: desc, category, skills_required: skills, budget_type: budgetType, budget_min: budgetMin, budget_max: budgetMax, duration, experience_level: experience, deadline });
+            postJob({ 
+                title, 
+                description: desc, 
+                category, 
+                skills_required: skills, 
+                budget_type: budgetType, 
+                budget_min: budgetMin, 
+                budget_max: budgetMax, 
+                duration, 
+                experience_level: experience, 
+                deadline,
+                attachments: uploadedAttachments
+            });
         }
     </script>
 </body>

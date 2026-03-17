@@ -2104,3 +2104,43 @@ body::after {
         flex: 1;
     }
 }
+
+/* ─── Star Rating ────────────────────────────────────────────────────────── */
+.star-rating {
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+    gap: 4px;
+}
+
+.star-rating input {
+    display: none;
+}
+
+.star-rating label {
+    font-size: 1.5rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: color var(--transition-fast);
+}
+
+.star-rating label:hover,
+.star-rating label:hover ~ label,
+.star-rating input:checked ~ label {
+    color: var(--warning);
+}
+
+/* ─── Reviews ────────────────────────────────────────────────────────────── */
+.reviews-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.review-item {
+    padding: 16px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.review-item:last-child {
+    border-bottom: none;
+}

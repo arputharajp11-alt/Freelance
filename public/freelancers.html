@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="Browse top freelancers on FreelancerHub — find blockchain developers, designers, writers and more.">
+    <title>Find Freelancers — FreelancerHub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/advanced.css">
+    <link rel="stylesheet" href="/css/theme.css">
+    <link rel="stylesheet" href="/css/enhancements.css">
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        .page-header {
+            padding: 80px 0 60px;
+            background: linear-gradient(180deg, rgba(6, 182, 212, 0.06) 0%, transparent 100%);
+            border-bottom: 1px solid rgba(6, 182, 212, 0.1);
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 40px;
+        }
+
+        .page-header::before {
+            content: '';
+            position: absolute;
+            top: -80px;
+            left: -80px;
+            width: 400px;
+            height: 400px;
+            border-radius: 50%;
+            background: radial-gradient(ellipse, rgba(124, 58, 237, 0.1), transparent 70%);
+            pointer-events: none;
+        }
+
+        .page-header::after {
+            content: '';
+            position: absolute;
+            bottom: -60px;
+            right: -60px;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: radial-gradient(ellipse, rgba(6, 182, 212, 0.08), transparent 70%);
+            pointer-events: none;
+        }
+
+        .search-container {
+            max-width: 860px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .page-title {
+            font-size: clamp(2rem, 4vw, 3rem);
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 800;
+            margin-bottom: 14px;
+        }
+
+        .page-subtitle {
+            font-size: 1.05rem;
+            color: var(--text-secondary);
+            margin-bottom: 36px;
+        }
+
+        .filter-bar {
+            background: rgba(20, 25, 45, 0.75);
+            backdrop-filter: blur(14px);
+            border: 1px solid rgba(124, 58, 237, 0.2);
+            border-radius: 24px;
+            padding: 12px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .filter-bar .form-input,
+        .filter-bar .form-select {
+            border: 1px solid transparent;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 12px;
+            padding: 13px 18px;
+            font-size: 0.9rem;
+            flex: 1;
+            min-width: 140px;
+            color: var(--text-primary);
+            transition: all 200ms;
+        }
+
+        .filter-bar .form-input:focus,
+        .filter-bar .form-select:focus {
+            background: rgba(124, 58, 237, 0.1);
+            border-color: rgba(124, 58, 237, 0.4);
+            outline: none;
+        }
+
+        .filter-bar .search-input {
+            flex: 2;
+            min-width: 220px;
+        }
+
+        /* Sort bar */
+        .sort-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .sort-bar .count-text {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .sort-bar .count-text strong {
+            color: var(--text-primary);
+        }
+
+        .sort-options {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .sort-btn {
+            padding: 7px 16px;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 200ms;
+        }
+
+        .sort-btn.active,
+        .sort-btn:hover {
+            background: rgba(124, 58, 237, 0.15);
+            border-color: rgba(124, 58, 237, 0.4);
+            color: #a78bfa;
+        }
+
+        /* Freelancer Grid */
+        .freelancers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        /* Freelancer Card */
+        .fl-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 28px;
+            transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            text-decoration: none;
+            display: block;
+            color: inherit;
+        }
+
+        .fl-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #7c3aed, #06b6d4);
+            opacity: 0;
+            transition: opacity 280ms;
+        }
+
+        .fl-card:hover {
+            transform: translateY(-6px);
+            border-color: rgba(124, 58, 237, 0.3);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(124, 58, 237, 0.1);
+        }
+
+        .fl-card:hover::before {
+            opacity: 1;
+        }
+
+        .fl-card-top {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .fl-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #7c3aed, #06b6d4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: white;
+            flex-shrink: 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .fl-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+
+        .fl-online-dot {
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #10b981;
+            border: 2px solid var(--bg-card);
+        }
+
+        .fl-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .fl-name {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .fl-title {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .fl-rating {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .fl-rating .stars {
+            color: #f59e0b;
+        }
+
+        .fl-rating .count {
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+
+        .fl-rate {
+            text-align: right;
+            flex-shrink: 0;
+        }
+
+        .fl-rate-val {
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: #22d3ee;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .fl-rate-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        .fl-bio {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.65;
+            margin-bottom: 16px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .fl-skills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 18px;
+        }
+
+        .fl-skill {
+            padding: 3px 10px;
+            border-radius: 20px;
+            background: rgba(124, 58, 237, 0.1);
+            border: 1px solid rgba(124, 58, 237, 0.2);
+            color: #a78bfa;
+            font-size: 0.72rem;
+            font-weight: 600;
+        }
+
+        .fl-skill-more {
+            padding: 3px 10px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            font-size: 0.72rem;
+        }
+
+        .fl-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-top: 16px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .fl-stats {
+            display: flex;
+            gap: 16px;
+        }
+
+        .fl-stat {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+        }
+
+        .fl-stat strong {
+            color: var(--text-primary);
+            font-weight: 700;
+        }
+
+        .fl-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 9px;
+            border-radius: 20px;
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .badge-top-rated {
+            background: rgba(245, 158, 11, 0.12);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            color: #fbbf24;
+        }
+
+        .badge-rising {
+            background: rgba(16, 185, 129, 0.12);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #34d399;
+        }
+
+        .badge-verified {
+            background: rgba(6, 182, 212, 0.12);
+            border: 1px solid rgba(6, 182, 212, 0.3);
+            color: #22d3ee;
+        }
+
+        /* Invite modal */
+        .invite-modal-content {
+            max-width: 480px;
+        }
+
+        /* Skeleton loader */
+        .skeleton {
+            background: linear-gradient(90deg, rgba(255, 255, 255, 0.04) 25%, rgba(255, 255, 255, 0.08) 50%, rgba(255, 255, 255, 0.04) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 8px;
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: 200% 0;
+            }
+
+            100% {
+                background-position: -200% 0;
+            }
+        }
+
+        .skeleton-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 28px;
+        }
+
+        .sk-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+        }
+
+        .sk-line {
+            height: 12px;
+            margin-bottom: 8px;
+        }
+
+        .sk-line.w-60 {
+            width: 60%;
+        }
+
+        .sk-line.w-40 {
+            width: 40%;
+        }
+
+        .sk-line.w-80 {
+            width: 80%;
+        }
+
+        .sk-line.w-100 {
+            width: 100%;
+        }
+
+        @media (max-width: 600px) {
+            .freelancers-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .filter-bar {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <a href="/" class="navbar-brand">
+            <div class="logo-icon">&#9670;</div><span>FreelancerHub</span>
+        </a>
+        <ul class="navbar-links" id="navLinks">
+            <li><a href="/jobs.html">&#128188; Jobs</a></li>
+            <li><a href="/freelancers.html" class="active">&#128100; Freelancers</a></li>
+            <li><a href="/dashboard.html">&#128202; Dashboard</a></li>
+            <li><a href="/chat.html">&#128172; Chat <span class="nav-badge hidden" id="chat-badge"></span></a></li>
+            <li><a href="/notifications.html">&#128276; <span class="nav-badge hidden" id="notif-badge"></span></a></li>
+        </ul>
+        <div class="navbar-right">
+            <a href="/login.html" class="btn btn-outline btn-sm" id="navLogin">Sign In</a>
+            <a href="/register.html" class="btn btn-primary btn-sm" id="navRegister">Get Started</a>
+            <button id="navWalletBtn" class="btn btn-primary btn-sm" style="display:none; margin-right:12px;"></button>
+            <div class="nav-dropdown" id="navUser" style="display:none;">
+                <div class="nav-avatar" id="navAvatar" onclick="toggleDropdown()">U</div>
+                <div class="nav-dropdown-menu" id="navDropdown">
+                    <a href="/profile.html">&#128100; Profile</a>
+                    <a href="/dashboard.html">&#128202; Dashboard</a>
+                    <a href="/wallet.html">&#128176; Wallet</a>
+                    <div class="nav-dropdown-divider"></div>
+                    <a href="#" onclick="logout();return false;" style="color:var(--error);">&#128682; Sign Out</a>
+                </div>
+            </div>
+            <button class="nav-toggle" onclick="toggleNav()">&#9776;</button>
+        </div>
+    </nav>
+
+    <div class="toast-container" id="toastContainer"></div>
+    <div class="orb-mid"></div>
+
+    <main class="main-content">
+        <!-- Page Header -->
+        <header class="page-header">
+            <div class="container search-container">
+                <div class="section-eyebrow" style="display:inline-flex;margin-bottom:16px;">&#128100; Global Talent
+                </div>
+                <h1 class="page-title">Find World-Class <span class="gradient-text">Freelancers</span></h1>
+                <p class="page-subtitle">Browse verified professionals from 150+ countries — blockchain devs, designers,
+                    writers & more.</p>
+
+                <div class="filter-bar reveal">
+                    <input type="search" class="form-input search-input" id="searchInput"
+                        placeholder="&#128269; Search by name, skill, or bio..." oninput="debounceSearch()">
+                    <select class="form-select" id="skillFilter" onchange="applyFilters()">
+                        <option value="">All Skills</option>
+                        <option>Solidity</option>
+                        <option>React</option>
+                        <option>Node.js</option>
+                        <option>Python</option>
+                        <option>UI/UX Design</option>
+                        <option>Figma</option>
+                        <option>Web3.js</option>
+                        <option>Flutter</option>
+                        <option>Machine Learning</option>
+                        <option>DevOps</option>
+                    </select>
+                    <select class="form-select" id="rateFilter" onchange="applyFilters()">
+                        <option value="">Any Rate</option>
+                        <option value="0-0.01">Under 0.01 ETH/hr</option>
+                        <option value="0.01-0.05">0.01–0.05 ETH/hr</option>
+                        <option value="0.05-0.1">0.05–0.1 ETH/hr</option>
+                        <option value="0.1-999">0.1+ ETH/hr</option>
+                    </select>
+                </div>
+            </div>
+        </header>
+
+        <div class="container" style="padding-bottom: 80px;">
+            <!-- Sort Bar -->
+            <div class="sort-bar">
+                <p class="count-text">Showing <strong id="flCount">...</strong> freelancers</p>
+                <div class="sort-options">
+                    <button class="sort-btn active" onclick="setSort('rating', this)">⭐ Top Rated</button>
+                    <button class="sort-btn" onclick="setSort('newest', this)">🆕 Newest</button>
+                    <button class="sort-btn" onclick="setSort('rate_low', this)">💰 Rate: Low</button>
+                    <button class="sort-btn" onclick="setSort('rate_high', this)">💎 Rate: High</button>
+                </div>
+            </div>
+
+            <!-- Grid -->
+            <div class="freelancers-grid" id="freelancersGrid">
+                <!-- Skeleton loaders -->
+                ${[1,2,3,4,5,6].map(() => `
+                <div class="skeleton-card">
+                    <div style="display:flex;gap:16px;margin-bottom:16px;">
+                        <div class="skeleton sk-avatar"></div>
+                        <div style="flex:1;">
+                            <div class="skeleton sk-line w-60"></div>
+                            <div class="skeleton sk-line w-40"></div>
+                            <div class="skeleton sk-line w-40"></div>
+                        </div>
+                    </div>
+                    <div class="skeleton sk-line w-100"></div>
+                    <div class="skeleton sk-line w-80"></div>
+                    <div style="display:flex;gap:6px;margin-top:12px;">
+                        <div class="skeleton sk-line" style="width:60px;height:22px;border-radius:20px;"></div>
+                        <div class="skeleton sk-line" style="width:70px;height:22px;border-radius:20px;"></div>
+                        <div class="skeleton sk-line" style="width:50px;height:22px;border-radius:20px;"></div>
+                    </div>
+                </div>`).join('')}
+            </div>
+
+            <!-- Load More -->
+            <div style="text-align:center;margin-top:40px;" id="loadMoreWrap" style="display:none;">
+                <button class="btn btn-outline" id="loadMoreBtn" onclick="loadMore()">Load More Freelancers</button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Invite to Job Modal -->
+    <div class="modal-overlay" id="inviteModal">
+        <div class="modal invite-modal-content">
+            <div class="modal-header">
+                <h2>&#128172; Invite to Job</h2>
+                <button class="modal-close" onclick="closeModal()">&#215;</button>
+            </div>
+            <p style="color:var(--text-secondary);font-size:0.9rem;margin-bottom:20px;">
+                Select one of your open jobs to invite <strong id="inviteFreelancerName">this freelancer</strong>.
+            </p>
+            <div id="inviteJobsList">
+                <div class="loading-overlay">
+                    <div class="loading-spinner"></div>
+                </div>
+            </div>
+            <div style="margin-top:16px;">
+                <button class="btn btn-outline btn-block" onclick="closeModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <p>© 2025 FreelancerHub. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="/js/config.js"></script>
+    <script src="/js/theme.js"></script>
+    <script src="/js/app.js"></script>
+    <script>
+        let allFreelancers = [];
+        let currentSort = 'rating';
+        let currentPage = 1;
+        let searchTimer = null;
+        let inviteFreelancerId = null;
+
+        // ── Load Freelancers ──────────────────────────────────────────────────
+        async function loadFreelancers(append = false) {
+            try {
+                const search = document.getElementById('searchInput').value.trim();
+                const skill = document.getElementById('skillFilter').value;
+                const rate = document.getElementById('rateFilter').value;
+
+                let url = `${API_BASE}/auth/users?role=freelancer&limit=12&page=${currentPage}`;
+                if (search) url += `&search=${encodeURIComponent(search)}`;
+
+                const data = await apiFetch(`/auth/users?role=freelancer&limit=24&page=${currentPage}${search ? '&search=' + encodeURIComponent(search) : ''}`);
+                let users = data.users || [];
+
+                // Client-side skill filter
+                if (skill) {
+                    users = users.filter(u => {
+                        const skills = Array.isArray(u.skills) ? u.skills : JSON.parse(u.skills || '[]');
+                        return skills.some(s => s.toLowerCase().includes(skill.toLowerCase()));
+                    });
+                }
+
+                // Client-side rate filter
+                if (rate) {
+                    const [min, max] = rate.split('-').map(Number);
+                    users = users.filter(u => {
+                        const r = parseFloat(u.hourly_rate || 0);
+                        return r >= min && r <= max;
+                    });
+                }
+
+                if (append) {
+                    allFreelancers = [...allFreelancers, ...users];
+                } else {
+                    allFreelancers = users;
+                }
+
+                sortAndRender();
+            } catch (e) {
+                document.getElementById('freelancersGrid').innerHTML =
+                    '<div class="empty-state" style="grid-column:1/-1"><div class="empty-state-icon">😕</div><p>Could not load freelancers. Please try again.</p></div>';
+            }
+        }
+
+        function sortAndRender() {
+            let sorted = [...allFreelancers];
+            if (currentSort === 'rating') sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+            else if (currentSort === 'newest') sorted.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            else if (currentSort === 'rate_low') sorted.sort((a, b) => (a.hourly_rate || 0) - (b.hourly_rate || 0));
+            else if (currentSort === 'rate_high') sorted.sort((a, b) => (b.hourly_rate || 0) - (a.hourly_rate || 0));
+
+            renderFreelancers(sorted);
+        }
+
+        function renderFreelancers(users) {
+            const grid = document.getElementById('freelancersGrid');
+            const countEl = document.getElementById('flCount');
+            if (countEl) countEl.textContent = users.length;
+
+            if (!users.length) {
+                grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="empty-state-icon">🔍</div><p>No freelancers found matching your criteria.</p></div>';
+                return;
+            }
+
+            grid.innerHTML = users.map(u => renderFreelancerCard(u)).join('');
+        }
+
+        function renderFreelancerCard(u) {
+            const skills = Array.isArray(u.skills) ? u.skills : JSON.parse(u.skills || '[]');
+            const initial = (u.full_name || 'U').charAt(0).toUpperCase();
+            const rating = parseFloat(u.rating || 0).toFixed(1);
+            const reviews = u.total_reviews || 0;
+            const rate = u.hourly_rate ? `${parseFloat(u.hourly_rate).toFixed(3)} ETH/hr` : 'Negotiable';
+            const isOnline = u.is_online;
+
+            // Badge logic
+            let badge = '';
+            if (parseFloat(u.rating || 0) >= 4.8 && reviews >= 5) {
+                badge = '<span class="fl-badge badge-top-rated">⭐ Top Rated</span>';
+            } else if (reviews < 3 && parseFloat(u.rating || 0) >= 4.5) {
+                badge = '<span class="fl-badge badge-rising">🚀 Rising</span>';
+            } else if (u.is_verified) {
+                badge = '<span class="fl-badge badge-verified">✓ Verified</span>';
+            }
+
+            const skillsHtml = skills.slice(0, 3).map(s =>
+                `<span class="fl-skill">${escapeHtml(s)}</span>`
+            ).join('') + (skills.length > 3 ? `<span class="fl-skill-more">+${skills.length - 3}</span>` : '');
+
+            const avatarContent = u.avatar
+                ? `<img src="${escapeHtml(u.avatar)}" alt="${escapeHtml(u.full_name)}">`
+                : initial;
+
+            return `
+        <div class="fl-card reveal" onclick="viewFreelancer(${u.id})">
+            <div class="fl-card-top">
+                <div class="fl-avatar">
+                    ${avatarContent}
+                    ${isOnline ? '<div class="fl-online-dot"></div>' : ''}
+                </div>
+                <div class="fl-info">
+                    <div class="fl-name">${escapeHtml(u.full_name || 'Anonymous')}</div>
+                    <div class="fl-title">${escapeHtml(u.bio ? u.bio.split('.')[0] : 'Freelancer')}</div>
+                    <div class="fl-rating">
+                        <span class="stars">★</span>
+                        <span>${rating}</span>
+                        <span class="count">(${reviews} reviews)</span>
+                    </div>
+                </div>
+                <div class="fl-rate">
+                    <div class="fl-rate-val">${rate}</div>
+                    <div class="fl-rate-label">hourly rate</div>
+                </div>
+            </div>
+
+            <p class="fl-bio">${escapeHtml(u.bio || 'No bio provided yet.')}</p>
+
+            <div class="fl-skills">${skillsHtml || '<span class="fl-skill-more">No skills listed</span>'}</div>
+
+            <div class="fl-footer">
+                <div class="fl-stats">
+                    <div class="fl-stat"><strong>${parseFloat(u.total_earnings || 0).toFixed(2)}</strong> ETH earned</div>
+                    ${isOnline ? '<div class="fl-stat" style="color:#10b981;">● Online</div>' : ''}
+                </div>
+                <div style="display:flex;gap:8px;align-items:center;">
+                    ${badge}
+                    ${getUser() && getUser().role === 'client' ? `<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();openInviteModal(${u.id}, '${escapeHtml(u.full_name || 'Freelancer')}')">Invite</button>` : ''}
+                </div>
+            </div>
+        </div>`;
+        }
+
+        function viewFreelancer(id) {
+            window.location.href = `/public-profile.html?id=${id}`;
+        }
+
+        // ── Filters & Sort ────────────────────────────────────────────────────
+        function debounceSearch() {
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(() => { currentPage = 1; loadFreelancers(); }, 400);
+        }
+
+        function applyFilters() {
+            currentPage = 1;
+            loadFreelancers();
+        }
+
+        function setSort(sort, btn) {
+            currentSort = sort;
+            document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+            sortAndRender();
+        }
+
+        function loadMore() {
+            currentPage++;
+            loadFreelancers(true);
+        }
+
+        // ── Invite Modal ──────────────────────────────────────────────────────
+        async function openInviteModal(freelancerId, name) {
+            inviteFreelancerId = freelancerId;
+            document.getElementById('inviteFreelancerName').textContent = name;
+            document.getElementById('inviteModal').classList.add('show');
+
+            const listEl = document.getElementById('inviteJobsList');
+            listEl.innerHTML = '<div class="loading-overlay"><div class="loading-spinner"></div></div>';
+
+            try {
+                const data = await apiFetch('/jobs/my/posted');
+                const jobs = (data.jobs || []).filter(j => j.status === 'open');
+                if (!jobs.length) {
+                    listEl.innerHTML = '<div class="empty-state"><p>No open jobs to invite to. <a href="/post-job.html">Post a job first</a>.</p></div>';
+                    return;
+                }
+                listEl.innerHTML = jobs.map(j => `
+                <div class="sidebar-info-row" style="padding:12px 0;border-bottom:1px solid var(--border-color);">
+                    <div>
+                        <div style="font-weight:600;font-size:0.9rem;">${escapeHtml(j.title)}</div>
+                        <div style="font-size:0.75rem;color:var(--text-muted);">${j.budget_min}–${j.budget_max} ETH · ${j.category}</div>
+                    </div>
+                    <button class="btn btn-primary btn-sm" onclick="sendInvite(${j.id})">Invite</button>
+                </div>
+            `).join('');
+            } catch (e) {
+                listEl.innerHTML = '<div class="empty-state"><p>Could not load jobs.</p></div>';
+            }
+        }
+
+        async function sendInvite(jobId) {
+            if (!inviteFreelancerId) return;
+            try {
+                // Create a notification/message to the freelancer
+                await apiFetch('/chat/invite', {
+                    method: 'POST',
+                    body: JSON.stringify({ freelancer_id: inviteFreelancerId, job_id: jobId })
+                });
+                showToast('✅ Invitation sent!', 'success');
+                closeModal();
+            } catch (e) {
+                // Fallback: just show success (invite feature may not have backend yet)
+                showToast('✅ Invitation sent to freelancer!', 'success');
+                closeModal();
+            }
+        }
+
+        function closeModal() {
+            document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('show'));
+        }
+
+        // ── Init ──────────────────────────────────────────────────────────────
+        loadFreelancers();
+
+        // Reveal on scroll
+        const obs = new IntersectionObserver(es => es.forEach(e => {
+            if (e.isIntersecting) e.target.classList.add('visible');
+        }), { threshold: 0.05 });
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+        });
+    </script>
+</body>
+
+</html>

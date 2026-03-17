@@ -19,6 +19,8 @@ const chatRoutes = require('./server/routes/chat');
 const notificationRoutes = require('./server/routes/notifications');
 const blockchainRoutes = require('./server/routes/blockchain');
 const walletRoutes = require('./server/routes/wallet');
+const reviewRoutes = require('./server/routes/reviews');
+const uploadRoutes = require('./server/routes/upload');
 
 // ── CORS Configuration ───────────────────────────────────────────────────
 const ALLOWED_ORIGINS = [
@@ -87,6 +89,7 @@ app.use('/api/', limiter);
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/uploads/avatars', express.static(path.join(__dirname, 'uploads', 'avatars')));
+app.use('/uploads/files', express.static(path.join(__dirname, 'uploads', 'files')));
 
 // ── API Routes ────────────────────────────────────────────────────────────
 app.use('/api/auth', authRoutes);
@@ -95,6 +98,8 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/blockchain', blockchainRoutes);
 app.use('/api/wallet', walletRoutes);
+app.use('/api/reviews', reviewRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
