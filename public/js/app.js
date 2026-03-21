@@ -455,6 +455,7 @@ function loadJobDetail() {
                         <div class="sidebar-info-row"><span class="label">Proposals</span><span class="value">${j.proposal_count || 0}</span></div>
                     </div>
                      ${isFreelancer && j.status === 'open' ? `<button class="btn btn-primary" style="width:100%;margin-top:12px;" onclick="openProposalModal()">✏️ Submit Proposal</button>` : ''}
+                     ${isFreelancer && j.status === 'in_progress' ? `<button class="btn btn-primary" style="width:100%;margin-top:12px;" onclick="submitWork(${j.id})">📤 Submit Delivered Work</button>` : ''}
                      ${isClient && j.status === 'submitted' ? `<button class="btn btn-primary" style="width:100%;margin-top:12px;" onclick="completeJob(${j.id})">✅ Approve & Release Payment</button>` : ''}
                      ${j.status === 'completed' ? `<button class="btn btn-outline" style="width:100%;margin-top:12px;" onclick="openReviewModal('${j.id}', '${isClient ? j.freelancer_id : j.client_id}', '${isClient ? j.freelancer_name : j.client_name}')">⭐ Leave a Review</button>` : ''}
                 </div>
@@ -674,7 +675,7 @@ function loadNotifications() {
             const ns = d.notifications || [];
             if (!ns.length) { el.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔔</div><p>No notifications yet.</p></div>'; return; }
             el.innerHTML = ns.map(n => `
-                <div class="notification-item${n.is_read ? '' : ' unread'}" onclick="markRead(${n.id}, this)">
+                <div class="notification-item${n.is_read ? '' : ' unread'}" onclick="handleNotifClick(${n.id}, '${n.link || ''}', this)">
                     <div class="notification-icon">🔔</div>
                     <div>
                         <div class="notification-title">${escapeHtml(n.title)}</div>
@@ -686,10 +687,11 @@ function loadNotifications() {
         .catch(() => { el.innerHTML = '<div class="empty-state"><p>Could not load notifications.</p></div>'; });
 }
 
-function markRead(id, el) {
-    apiFetch(`/notifications/${id}/read`, { method: 'PUT' })
-        .then(() => { if (el) el.classList.remove('unread'); })
-        .catch(() => { });
+function handleNotifClick(id, link, el) {
+    if (el && el.classList.contains('unread')) {
+        apiFetch(`/notifications/${id}/read`, { method: 'PUT' }).catch(() => { });
+    }
+    if (link) window.location.href = link;
 }
 
 function markAllRead() {
@@ -717,7 +719,13 @@ function loadConversations(silent = false) {
             if (!d) return;
             const convs = d.conversations || [];
             // Cache metadata for use by openConversation
-            convs.forEach(c => { window._convMeta[c.id] = { name: c.other_name || 'Unknown', job: c.job_title || '' }; });
+            convs.forEach(c => { 
+                window._convMeta[c.id] = { 
+                    name: c.other_name || 'Unknown', 
+                    job: c.job_title || '',
+                    jobId: c.job_id
+                }; 
+            });
             if (!convs.length) { el.innerHTML = '<div class="empty-state" style="padding:20px"><p>No conversations yet.</p></div>'; return; }
             el.innerHTML = convs.map(c => {
                 const activeClass = window._activeConvId === c.id ? 'active' : '';
@@ -747,7 +755,12 @@ function openConversation(convId, silent = false) {
         const nameEl = document.getElementById('chatPartnerName');
         const jobEl = document.getElementById('chatJobTitle');
         if (nameEl) nameEl.textContent = meta.name;
-        if (jobEl) jobEl.textContent = meta.job;
+        if (jobEl) {
+            jobEl.innerHTML = meta.job;
+            if (meta.jobId) {
+                jobEl.innerHTML += ` <a href="/job-detail.html?id=${meta.jobId}" style="color:var(--accent-secondary);margin-left:8px;font-size:0.7rem;text-decoration:underline;">View Project →</a>`;
+            }
+        }
         const av = document.querySelector('#chatActiveArea .conversation-avatar');
         if (av) av.textContent = (meta.name||'?').charAt(0).toUpperCase();
     }
@@ -1107,6 +1120,17 @@ async function completeJob(jobId) {
     } catch (e) {
         console.error('Complete error:', e);
         showToast(e.reason || e.message || 'Failed to complete', 'error');
+    }
+}
+
+async function submitWork(jobId) {
+    if (!confirm('Are you sure you want to submit your work for review?')) return;
+    try {
+        await apiFetch(`/jobs/${jobId}/submit`, { method: 'POST' });
+        showToast('Work submitted successfully! 🚀', 'success');
+        setTimeout(() => location.reload(), 1200);
+    } catch (e) {
+        showToast(e.message || 'Submission failed', 'error');
     }
 }
 

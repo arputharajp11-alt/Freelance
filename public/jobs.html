@@ -322,7 +322,7 @@
             }
 
             grid.innerHTML = jobs.map(j => `
-                <a href="/jobs.html?jobId=${j.id}" class="job-card reveal visible" style="text-decoration: none; display: block; color: inherit;">
+                <a href="/job-detail.html?id=${j.id}" class="job-card reveal visible" style="text-decoration: none; display: block; color: inherit;">
                     <div class="job-card-header">
                         <div>
                             <div class="job-badge">${j.category || 'Software'}</div>

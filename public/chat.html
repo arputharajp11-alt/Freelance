@@ -92,6 +92,14 @@
     <script>
         requireAuth();
         loadConversations();
+        
+        // Auto-open conversation if conv param is present
+        const params = new URLSearchParams(window.location.search);
+        const convId = params.get('conv');
+        if (convId) {
+            // Need a slight delay to ensure UI is ready or just call it directly
+            setTimeout(() => openConversation(convId), 800);
+        }
     </script>
 </body>
 </html>
