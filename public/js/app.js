@@ -539,26 +539,15 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
-async function hireFreelancer(jobId, freelancerId) {
-    if (!confirm('Hire this freelancer and move the job to In Progress?')) return;
-    try {
-        await apiFetch(`/jobs/${jobId}/hire/${freelancerId}`, { method: 'POST', body: JSON.stringify({}) });
-        showToast('Freelancer hired! 🎉', 'success');
-        setTimeout(() => location.reload(), 1200);
-    } catch (e) {
-        showToast(e.message || 'Failed to hire', 'error');
-    }
-}
-
-async function completeJob(jobId) {
-    if (!confirm('Approve the work and release escrow payment?')) return;
-    try {
-        await apiFetch(`/jobs/${jobId}/complete`, { method: 'POST', body: JSON.stringify({}) });
-        showToast('Payment released! Project completed 🎉', 'success');
-        setTimeout(() => location.reload(), 1200);
-    } catch (e) {
-        showToast(e.message || 'Failed to complete', 'error');
-    }
+function postJob(data) {
+    const user = getUser();
+    if (!user) { location.href = '/login.html'; return; }
+    apiFetch('/jobs', { method: 'POST', body: JSON.stringify(data) })
+        .then(d => {
+            showToast('Job posted successfully! 🎉', 'success');
+            setTimeout(() => { location.href = '/dashboard.html'; }, 1200);
+        })
+        .catch(e => showToast(e.message || 'Failed to post job', 'error'));
 }
 
 // ── Review System ────────────────────────────────────────────────────────
@@ -875,6 +864,10 @@ if (document.getElementById('chatMessages')) {
 // ── Web3 / MetaMask / Ganache ──────────────────────────────────────────
 const GANACHE_CHAIN_ID = '0x1691'; // 5777
 
+let _escrowContract = null;
+let _contractABI = null;
+let _contractAddress = null;
+
 async function loadWeb3() {
     if (typeof window.ethers !== 'undefined') return true;
     return new Promise((resolve) => {
@@ -900,7 +893,7 @@ async function connectWallet() {
             address = accounts[0];
 
             const network = await provider.getNetwork();
-            if (network.chainId !== 5777n) {
+            if (network.chainId !== 5777n && network.chainId !== 1337n) {
                 try {
                     await window.ethereum.request({
                         method: 'wallet_switchEthereumChain',
@@ -925,7 +918,6 @@ async function connectWallet() {
         } catch (error) {
             console.error('MetaMask Error:', error);
             showToast('MetaMask connection failed', 'error');
-            // Continue to fallback
         }
     }
 
@@ -936,7 +928,6 @@ async function connectWallet() {
             provider = new ethers.JsonRpcProvider(GANACHE_RPC);
             const accounts = await provider.listAccounts();
             if (accounts && accounts.length > 0) {
-                // Use first account as simulation
                 address = accounts[0].address || accounts[0]; 
                 showToast('Connecting via Ganache RPC (No MetaMask)', 'info');
             } else {
@@ -967,6 +958,10 @@ async function connectWallet() {
             showToast(`Wallet connected: ${address.substring(0, 6)}...`, 'success');
             updateNav();
             if (typeof loadWallet === 'function') loadWallet();
+            
+            // Initialize contract after connection
+            await getEscrowContract();
+            
             return address;
         } catch (e) {
             showToast('Failed to update profile wallet', 'error');
@@ -974,15 +969,145 @@ async function connectWallet() {
     }
 }
 
-function postJob(data) {
+async function getEscrowContract() {
+    if (_escrowContract) return _escrowContract;
+
+    try {
+        await loadWeb3();
+        
+        // Fetch ABI and Address from backend
+        if (!_contractABI) {
+            const contractData = await apiFetch('/blockchain/contract');
+            _contractABI = contractData.abi;
+        }
+        
+        if (!_contractAddress) {
+            const status = await apiFetch('/blockchain/status');
+            _contractAddress = status.contract_address;
+        }
+
+        if (!_contractAddress || _contractAddress === 'Not deployed') {
+            console.warn('Contract not deployed yet');
+            return null;
+        }
+
+        let provider;
+        if (window.ethereum) {
+            provider = new ethers.BrowserProvider(window.ethereum);
+        } else {
+            provider = new ethers.JsonRpcProvider(GANACHE_RPC);
+        }
+
+        const signer = await provider.getSigner();
+        _escrowContract = new ethers.Contract(_contractAddress, _contractABI, signer);
+        return _escrowContract;
+    } catch (e) {
+        console.error('Failed to init contract:', e);
+        return null;
+    }
+}
+
+async function hireFreelancer(jobId, freelancerId) {
     const user = getUser();
-    if (!user) { location.href = '/login.html'; return; }
-    apiFetch('/jobs', { method: 'POST', body: JSON.stringify(data) })
-        .then(d => {
-            showToast('Job posted successfully! 🎉', 'success');
-            setTimeout(() => { location.href = '/dashboard.html'; }, 1200);
-        })
-        .catch(e => showToast(e.message || 'Failed to post job', 'error'));
+    if (!user || user.role !== 'client') return showToast('Only clients can hire', 'error');
+
+    // 1. Get job details to know the budget
+    const jobData = await apiFetch(`/jobs/${jobId}`);
+    const job = jobData.job;
+    const proposal = jobData.proposals.find(p => p.freelancer_id == freelancerId);
+    
+    if (!proposal) return showToast('Proposal not found', 'error');
+    const amount = proposal.proposed_amount;
+
+    if (!confirm(`Hire this freelancer for ${amount} ETH? Funds will be locked in escrow.`)) return;
+
+    try {
+        showToast('Initiating blockchain transaction...', 'info');
+        const contract = await getEscrowContract();
+        
+        let txHash = '';
+        let blockchainProjectId = null;
+
+        if (contract) {
+            // Deadline in 30 days if not set
+            const deadline = job.deadline ? Math.floor(new Date(job.deadline).getTime() / 1000) : Math.floor(Date.now() / 1000) + (30 * 24 * 60 * 60);
+            
+            // Contract function: createProject(string title, string description, uint256 deadline)
+            const tx = await contract.createProject(job.title, job.description, deadline, {
+                value: ethers.parseEther(amount.toString())
+            });
+            
+            showToast('Confirming transaction...', 'info');
+            const receipt = await tx.wait();
+            txHash = receipt.hash;
+            
+            // Extract ProjectCreated event to get projectId
+            const event = receipt.logs.find(log => {
+                try {
+                    const parsed = contract.interface.parseLog(log);
+                    return parsed && parsed.name === 'ProjectCreated';
+                } catch (e) { return false; }
+            });
+            
+            if (event) {
+                const parsed = contract.interface.parseLog(event);
+                blockchainProjectId = Number(parsed.args.projectId);
+            }
+            
+            showToast('Escrow locked on blockchain! ✅', 'success');
+        } else {
+            showToast('Blockchain not connected. Hiring via database only.', 'warning');
+        }
+
+        await apiFetch(`/jobs/${jobId}/hire/${freelancerId}`, { 
+            method: 'POST', 
+            body: JSON.stringify({
+                blockchain_project_id: blockchainProjectId,
+                escrow_tx_hash: txHash,
+                escrow_amount: amount
+            }) 
+        });
+
+        showToast('Freelancer hired! 🎉', 'success');
+        setTimeout(() => location.reload(), 1200);
+    } catch (e) {
+        console.error('Hire error:', e);
+        showToast(e.reason || e.message || 'Failed to hire', 'error');
+    }
+}
+
+async function completeJob(jobId) {
+    if (!confirm('Approve the work and release escrow payment?')) return;
+    
+    try {
+        const jobData = await apiFetch(`/jobs/${jobId}`);
+        const job = jobData.job;
+        
+        showToast('Initiating blockchain release...', 'info');
+        const contract = await getEscrowContract();
+        
+        let txHash = '';
+        
+        if (contract && job.blockchain_project_id) {
+            // Contract function: releaseFunds(uint256 projectId)
+            const tx = await contract.releaseFunds(job.blockchain_project_id);
+            showToast('Confirming release...', 'info');
+            const receipt = await tx.wait();
+            txHash = receipt.hash;
+            showToast('Funds released on blockchain! 💸', 'success');
+        }
+
+        await apiFetch(`/jobs/${jobId}/complete`, { 
+            method: 'POST', 
+            body: JSON.stringify({ tx_hash: txHash }) 
+        });
+        
+        showToast('Payment released! Project completed 🎉', 'success');
+        setTimeout(() => location.reload(), 1200);
+    } catch (e) {
+        console.error('Complete error:', e);
+        showToast(e.reason || e.message || 'Failed to complete', 'error');
+    }
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────
@@ -1052,6 +1177,13 @@ async function initSocket() {
                 location.href = `/chat.html?conv=${data.conversationId}`;
             });
         }
+    });
+
+    socket.on('notification', (data) => {
+        showToast(`🔔 ${data.title}: ${data.message}`, 'info', () => {
+            if (data.link) location.href = data.link;
+        });
+        if (typeof fetchUnreadCounts === 'function') fetchUnreadCounts();
     });
 
     socket.on('user_online', (data) => {

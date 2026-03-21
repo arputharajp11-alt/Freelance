@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { query } = require('../config/database');
 const { authenticate } = require('../middleware/auth');
+const { sendRealtimeNotification } = require('../socket');
 
 // GET /api/chat/conversations
 router.get('/conversations', authenticate, async (req, res) => {
@@ -169,10 +170,18 @@ router.post('/invite', authenticate, async (req, res) => {
 
         // Notify freelancer
         const clientName = (await query('SELECT full_name FROM users WHERE id = $1', [req.user.id])).rows[0].full_name;
+        const notifData = {
+            type: 'invitation',
+            title: `Invitation from ${clientName}`,
+            message: `You were invited to: ${job.title}`,
+            link: `/chat.html?conv=${conversationId}`
+        };
         await query(`
             INSERT INTO notifications (user_id, type, title, message, link)
-            VALUES ($1, 'invitation', $2, $3, $4)
-        `, [freelancer_id, `Invitation from ${clientName}`, `You were invited to: ${job.title}`, `/chat.html?conv=${conversationId}`]);
+            VALUES ($1, $2, $3, $4, $5)
+        `, [freelancer_id, notifData.type, notifData.title, notifData.message, notifData.link]);
+
+        sendRealtimeNotification(freelancer_id, notifData);
 
         res.json({ message: 'Invitation sent!', conversationId });
     } catch (error) {

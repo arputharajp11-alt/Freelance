@@ -3,6 +3,7 @@ const router = express.Router();
 const { query } = require('../config/database');
 const { authenticate, authorize } = require('../middleware/auth');
 const { sendJobNotification, sendStatusUpdate } = require('../services/email');
+const { sendRealtimeNotification } = require('../socket');
 
 // ─── Helper: credit wallet ────────────────────────────────────────────────
 async function creditWallet(userId, amount, description, jobId = null, txHash = '') {
@@ -309,11 +310,18 @@ router.post('/:id/hire/:freelancerId', authenticate, authorize('client'), async 
         `, [conversationId, req.user.id, parseInt(freelancerId), parseInt(jobId)]);
 
         // Notify freelancer
-        const freelancer = (await query('SELECT email, full_name FROM users WHERE id = $1', [freelancerId])).rows[0];
+        const notifData = {
+            type: 'hired',
+            title: `You've been hired!`,
+            message: `You've been hired for: ${job.title}`,
+            link: `/dashboard.html`
+        };
         await query(`
             INSERT INTO notifications (user_id, type, title, message, link)
-            VALUES ($1, 'hired', $2, $3, $4)
-        `, [parseInt(freelancerId), `You've been hired!`, `You've been hired for: ${job.title}`, `/dashboard.html`]);
+            VALUES ($1, $2, $3, $4, $5)
+        `, [parseInt(freelancerId), notifData.type, notifData.title, notifData.message, notifData.link]);
+
+        sendRealtimeNotification(parseInt(freelancerId), notifData);
 
         sendStatusUpdate(freelancer.email, freelancer.full_name, job.title, 'Hired',
             'Congratulations! You have been hired for this project.').catch(() => { });
@@ -343,11 +351,18 @@ router.post('/:id/submit', authenticate, authorize('freelancer'), async (req, re
 
         await query("UPDATE jobs SET status = 'submitted', updated_at = NOW() WHERE id = $1", [jobId]);
 
-        const client = (await query('SELECT email, full_name FROM users WHERE id = $1', [job.client_id])).rows[0];
+        const notifData = {
+            type: 'work_submitted',
+            title: 'Work Submitted',
+            message: `Freelancer submitted work for: ${job.title}`,
+            link: `/job-detail.html?id=${jobId}`
+        };
         await query(`
             INSERT INTO notifications (user_id, type, title, message, link)
-            VALUES ($1, 'work_submitted', $2, $3, $4)
-        `, [job.client_id, 'Work Submitted', `Freelancer submitted work for: ${job.title}`, `/job-detail.html?id=${jobId}`]);
+            VALUES ($1, $2, $3, $4, $5)
+        `, [job.client_id, notifData.type, notifData.title, notifData.message, notifData.link]);
+
+        sendRealtimeNotification(job.client_id, notifData);
 
         sendStatusUpdate(client.email, client.full_name, job.title, 'Work Submitted',
             'The freelancer has submitted their work for review.').catch(() => { });
@@ -387,10 +402,18 @@ router.post('/:id/complete', authenticate, authorize('client'), async (req, res)
             `, [jobId, tx_hash, req.user.wallet_address || 'escrow', freelancer.wallet_address || '', job.escrow_amount || 0]);
         }
 
+        const notifData = {
+            type: 'payment_released',
+            title: 'Payment Released! 🎉',
+            message: `Payment released for: ${job.title}`,
+            link: `/dashboard.html`
+        };
         await query(`
             INSERT INTO notifications (user_id, type, title, message, link)
-            VALUES ($1, 'payment_released', $2, $3, $4)
-        `, [job.freelancer_id, 'Payment Released! 🎉', `Payment released for: ${job.title}`, `/dashboard.html`]);
+            VALUES ($1, $2, $3, $4, $5)
+        `, [job.freelancer_id, notifData.type, notifData.title, notifData.message, notifData.link]);
+
+        sendRealtimeNotification(job.freelancer_id, notifData);
 
         sendStatusUpdate(freelancer.email, freelancer.full_name, job.title, 'Completed & Paid',
             `Congratulations! The client approved your work and ${job.escrow_amount} ETH has been released to your wallet.`).catch(() => { });
@@ -416,10 +439,18 @@ router.post('/:id/dispute', authenticate, authorize('client'), async (req, res) 
         await query("UPDATE jobs SET status = 'disputed', updated_at = NOW() WHERE id = $1", [jobId]);
 
         const freelancer = (await query('SELECT email, full_name FROM users WHERE id = $1', [job.freelancer_id])).rows[0];
+        const notifData = {
+            type: 'dispute',
+            title: 'Dispute Raised',
+            message: `Client raised a dispute for: ${job.title}. Reason: ${reason || 'Not specified'}`,
+            link: `/dashboard.html`
+        };
         await query(`
             INSERT INTO notifications (user_id, type, title, message, link)
-            VALUES ($1, 'dispute', $2, $3, $4)
-        `, [job.freelancer_id, 'Dispute Raised', `Client raised a dispute for: ${job.title}. Reason: ${reason || 'Not specified'}`, `/dashboard.html`]);
+            VALUES ($1, $2, $3, $4, $5)
+        `, [job.freelancer_id, notifData.type, notifData.title, notifData.message, notifData.link]);
+
+        sendRealtimeNotification(job.freelancer_id, notifData);
 
         sendStatusUpdate(freelancer.email, freelancer.full_name, job.title, 'Disputed',
             `The client has raised a dispute. Reason: ${reason || 'Not specified'}`).catch(() => { });

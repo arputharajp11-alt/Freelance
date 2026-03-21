@@ -2,8 +2,11 @@ const jwt = require('jsonwebtoken');
 const { query } = require('./config/database');
 const JWT_SECRET = process.env.JWT_SECRET || 'freelancer-hub-secret-key-dev-2024';
 
+let ioInstance = null;
+const onlineUsers = new Map();
+
 function initializeSocket(io) {
-    const onlineUsers = new Map();
+    ioInstance = io;
 
     // Async auth middleware for Socket.IO
     io.use(async (socket, next) => {
@@ -45,7 +48,7 @@ function initializeSocket(io) {
         // Handle sending messages
         socket.on('send_message', async (data) => {
             try {
-                const { conversation_id, receiver_id, message, message_type, job_id } = data;
+                const { conversation_id, receiver_id, message, message_type, job_id, file_url } = data;
                 let convId = conversation_id;
 
                 if (!convId) {
@@ -66,7 +69,7 @@ function initializeSocket(io) {
                     INSERT INTO messages (conversation_id, sender_id, receiver_id, job_id, message, message_type, file_url)
                     VALUES ($1, $2, $3, $4, $5, $6, $7)
                     RETURNING id
-                `, [convId, userId, receiver_id, job_id || null, message, message_type || 'text', data.file_url || null]);
+                `, [convId, userId, receiver_id, job_id || null, message, message_type || 'text', file_url || null]);
 
                 await query(
                     'UPDATE conversations SET last_message = $1, last_message_at = NOW() WHERE id = $2',
@@ -121,4 +124,10 @@ function initializeSocket(io) {
     return io;
 }
 
-module.exports = { initializeSocket };
+function sendRealtimeNotification(userId, data) {
+    if (ioInstance) {
+        ioInstance.to(`user_${userId}`).emit('notification', data);
+    }
+}
+
+module.exports = { initializeSocket, sendRealtimeNotification };
