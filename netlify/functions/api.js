@@ -201,18 +201,29 @@ app.post('/api/auth/register', async (req, res) => {
         const verificationToken = uuidv4();
         const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
-        const result = await query(`
-            INSERT INTO users (email, password, full_name, role, skills, hourly_rate, bio, verification_token, verification_expires)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-            RETURNING id
-        `, [
-            email, hashedPassword, full_name, role,
-            JSON.stringify(skills || []),
-            hourly_rate || 0,
-            bio || '',
-            verificationToken,
-            verificationExpires
-        ]);
+        // Use only the core columns that definitely exist in any schema version
+        let result;
+        try {
+            result = await query(`
+                INSERT INTO users (email, password, full_name, role, skills, hourly_rate, bio, verification_token, verification_expires)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                RETURNING id
+            `, [
+                email, hashedPassword, full_name, role,
+                JSON.stringify(skills || []),
+                hourly_rate || 0,
+                bio || '',
+                verificationToken,
+                verificationExpires
+            ]);
+        } catch (insertErr) {
+            // Fallback: insert without optional columns that may be missing
+            result = await query(`
+                INSERT INTO users (email, password, full_name, role)
+                VALUES ($1, $2, $3, $4)
+                RETURNING id
+            `, [email, hashedPassword, full_name, role]);
+        }
 
         const userId = result.rows[0].id;
         const token = generateToken(userId);
@@ -275,19 +286,30 @@ app.post('/api/auth/login', async (req, res) => {
             return res.status(401).json({ error: 'Invalid email or password' });
         }
 
-        await query('UPDATE users SET is_online = true, last_seen = NOW() WHERE id = $1', [user.id]);
+        // Best-effort: update online status — never crash login if columns are missing
+        try {
+            await query('UPDATE users SET is_online = true, last_seen = NOW() WHERE id = $1', [user.id]);
+        } catch (e) { /* is_online/last_seen may not exist yet */ }
+
         const token = generateToken(user.id);
 
         res.json({
             message: 'Login successful',
             token,
             user: {
-                id: user.id, email: user.email, full_name: user.full_name,
-                role: user.role, is_verified: user.is_verified,
-                wallet_address: user.wallet_address, avatar: user.avatar,
-                rating: user.rating, skills: JSON.parse(user.skills || '[]'),
-                bio: user.bio, hourly_rate: user.hourly_rate,
-                total_earnings: user.total_earnings, total_spent: user.total_spent
+                id: user.id,
+                email: user.email,
+                full_name: user.full_name || '',
+                role: user.role,
+                is_verified: user.is_verified || false,
+                wallet_address: user.wallet_address || '',
+                avatar: user.avatar || null,
+                rating: user.rating || 0,
+                skills: JSON.parse(user.skills || '[]'),
+                bio: user.bio || '',
+                hourly_rate: user.hourly_rate || 0,
+                total_earnings: user.total_earnings || 0,
+                total_spent: user.total_spent || 0
             }
         });
     } catch (error) {
@@ -1296,21 +1318,55 @@ async function ensureTablesExist() {
             try { await sqlFn(m); } catch (e) { /* column may already exist */ }
         }
     }
+
+    // ── Schema migrations: add columns that may be missing on older DB instances ──
+    const migrations = [
+        `ALTER TABLE users ADD COLUMN IF NOT EXISTS location TEXT DEFAULT ''`,
+        `ALTER TABLE users ADD COLUMN IF NOT EXISTS title TEXT DEFAULT ''`,
+        `ALTER TABLE users ADD COLUMN IF NOT EXISTS website TEXT DEFAULT ''`,
+        `ALTER TABLE users ADD COLUMN IF NOT EXISTS github TEXT DEFAULT ''`,
+        `ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW()`,
+        `ALTER TABLE users ADD COLUMN IF NOT EXISTS total_earnings REAL DEFAULT 0`,
+        `ALTER TABLE users ADD COLUMN IF NOT EXISTS total_spent REAL DEFAULT 0`,
+        `ALTER TABLE users ADD COLUMN IF NOT EXISTS total_reviews INTEGER DEFAULT 0`,
+        `ALTER TABLE users ADD COLUMN IF NOT EXISTS is_online BOOLEAN DEFAULT false`,
+        `ALTER TABLE users ADD COLUMN IF NOT EXISTS last_seen TIMESTAMPTZ DEFAULT NOW()`,
+        `ALTER TABLE users ADD COLUMN IF NOT EXISTS bio TEXT DEFAULT ''`,
+        `ALTER TABLE users ADD COLUMN IF NOT EXISTS skills TEXT DEFAULT '[]'`,
+        `ALTER TABLE users ADD COLUMN IF NOT EXISTS hourly_rate REAL DEFAULT 0`,
+        `ALTER TABLE users ADD COLUMN IF NOT EXISTS wallet_address TEXT DEFAULT ''`,
+        `ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_token TEXT DEFAULT NULL`,
+        `ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_expires TIMESTAMPTZ DEFAULT NULL`,
+        `ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token TEXT DEFAULT NULL`,
+        `ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_expires TIMESTAMPTZ DEFAULT NULL`,
+    ];
+    for (const m of migrations) {
+        try { await sqlFn(m); } catch (e) { /* column may already exist */ }
+    }
 }
 
+<<<<<<< HEAD
 // ── Initialise DB tables on cold start (runs once per Lambda container) ─────
 // Skip silently if DATABASE_URL is not yet configured (avoid crash on cold start)
 const initPromise = ensureTablesExist().catch(err => { 
     console.error('DB init error on cold start:', err.message); 
 });
+=======
+// ── Initialise DB tables on cold start (fire-and-forget — never blocks requests) ─
+// Running migrations in the background means login/register work immediately
+// even on the first cold start after a fresh deploy.
+if (process.env.DATABASE_URL) {
+    ensureTablesExist().catch(err => {
+        console.error('DB init error on cold start:', err.message);
+    });
+}
+>>>>>>> fc20771 (update files)
 
 // ── Netlify Function export ───────────────────────────────────────────────
 const handler = serverless(app);
 
 module.exports.handler = async (event, context) => {
     context.callbackWaitsForEmptyEventLoop = false;
-    // Wait for DB tables to be ready (no-op after first invocation; skipped if DB_URL missing)
-    await initPromise;
     try {
         return await handler(event, context);
     } catch (err) {

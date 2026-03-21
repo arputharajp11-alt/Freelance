@@ -539,7 +539,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-
 function postJob(data) {
     const user = getUser();
     if (!user) { location.href = '/login.html'; return; }
@@ -549,6 +548,17 @@ function postJob(data) {
             setTimeout(() => { location.href = '/dashboard.html'; }, 1200);
         })
         .catch(e => showToast(e.message || 'Failed to post job', 'error'));
+}
+
+async function hireFreelancer(jobId, freelancerId) {
+    if (!confirm('Hire this freelancer and move the job to In Progress?')) return;
+    try {
+        await apiFetch(`/jobs/${jobId}/hire/${freelancerId}`, { method: 'POST', body: JSON.stringify({}) });
+        showToast('Freelancer hired! 🎉', 'success');
+        setTimeout(() => location.reload(), 1200);
+    } catch (e) {
+        showToast(e.message || 'Failed to hire', 'error');
+    }
 }
 
 // ── Review System ────────────────────────────────────────────────────────
@@ -670,18 +680,20 @@ function withdrawFunds() {
 function loadNotifications() {
     const el = document.getElementById('notifList');
     if (!el) return;
+    const iconMap = { hired: '🤝', payment_released: '💸', work_submitted: '📤', dispute: '⚠️', invitation: '📩', message: '💬', review: '⭐', proposal: '📝', invitation_message: '💬' };
     apiFetch('/notifications')
         .then(d => {
             const ns = d.notifications || [];
             if (!ns.length) { el.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔔</div><p>No notifications yet.</p></div>'; return; }
             el.innerHTML = ns.map(n => `
-                <div class="notification-item${n.is_read ? '' : ' unread'}" onclick="handleNotifClick(${n.id}, '${n.link || ''}', this)">
-                    <div class="notification-icon">🔔</div>
-                    <div>
+                <div class="notification-item${n.is_read ? '' : ' unread'}" data-notif-type="${n.type || ''}" onclick="handleNotifClick(${n.id}, '${n.link || ''}', this)">
+                    <div class="notification-icon">${iconMap[n.type] || '🔔'}</div>
+                    <div style="flex:1;">
                         <div class="notification-title">${escapeHtml(n.title)}</div>
                         <div class="notification-message">${escapeHtml(n.message)}</div>
                         <div class="notification-time">${timeAgo(n.created_at)}</div>
                     </div>
+                    ${n.link ? '<div style="font-size:0.7rem;color:var(--accent-secondary);margin-left:12px;white-space:nowrap;">View →</div>' : ''}
                 </div>`).join('');
         })
         .catch(() => { el.innerHTML = '<div class="empty-state"><p>Could not load notifications.</p></div>'; });

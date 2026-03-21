@@ -1,2 +1,559 @@
-<!DOCTYPE html><html lang=en><head><meta charset=UTF-8><meta name=viewport content=width=device-width><title>Job Detail - FreelanceHub</title><link rel=stylesheet href=/css/style.css></head><body><nav class=navbar><a href=/ class=navbar-brand><div class=logo-icon>&#9670;</div><span>FreelanceHub</span></a><ul class=navbar-links id=navLinks><li><a href=/jobs.html>&#128188; Jobs</a></li><li><a href=/dashboard.html>Dashboard</a></li><li><a href=/chat.html>&#128172; Chat</a></li><li><a href=/notifications.html>&#128276; Alerts</a></li></ul><div class=navbar-right id=navRight><a href=/login.html class=btn id=navLogin>Sign In</a><a href=/register.html class=btn id=navRegister>Get Started</a><button id="navWalletBtn" class="btn btn-primary btn-sm" style="display:none; margin-right:12px;"></button><div class=nav-dropdown id=navUser style=display:none><div class=nav-avatar id=navAvatar onclick=toggleDropdown()>U</div><div class=nav-dropdown-menu id=navDropdown><a href=/profile.html>Profile</a><a href=/wallet.html>Wallet</a><div class=nav-dropdown-divider></div><a href=# onclick=logout()>Sign Out</a></div></div></div><button class=nav-toggle onclick=toggleNav()>Menu</button></nav><div class=toast-container id=toastContainer></div><main class=main-content><div class=container style=padding-top:30px><div style=margin-bottom:16px><a href=/jobs.html style=font-size:0.875rem>&#8592; Back to Jobs</a></div><div id=jobDetailContent><div class=loading-overlay><div class=loading-spinner></div><span>Loading job...</span></div></div></div><div class=modal-overlay id=proposalModal><div class=modal><div class=modal-header><h2>Submit Proposal</h2><button class=modal-close onclick=closeModal()>&#215;</button></div><form id=proposalForm><div class=form-group><label class=form-label>Your Bid Amount (USD)</label><input type=number class=form-input id=propAmount placeholder=500 min=1 required></div><div class=form-group><label class=form-label>Estimated Delivery (days)</label><input type=number class=form-input id=propDelivery placeholder=7 min=1 required></div><div class=form-group><label class=form-label>Cover Letter</label><textarea class=form-textarea id=propLetter placeholder= Describe your approach and why you are the best fit... required></textarea></div><div style=display:flex;gap:10px;justify-content:flex-end><button type=button class=btn btn-secondary onclick=closeModal()>Cancel</button><button type=submit class=btn btn-primary>Submit Proposal</button></div></form></div></div><div class="modal-overlay" id="reviewModal"><div class="modal"><div class="modal-header"><h2>Leave a Review</h2><button class="modal-close" onclick="closeModal()">×</button></div><form id="reviewForm"><div class="form-group"><label class="form-label">Rating</label><div class="star-rating"><input type="radio" name="rating" value="5" id="r5"><label for="r5">⭐</label><input type="radio" name="rating" value="4" id="r4"><label for="r4">⭐</label><input type="radio" name="rating" value="3" id="r3"><label for="r3">⭐</label><input type="radio" name="rating" value="2" id="r2"><label for="r2">⭐</label><input type="radio" name="rating" value="1" id="r1"><label for="r1">⭐</label></div></div><div class="form-group"><label class="form-label">Review</label><textarea class="form-textarea" id="reviewComment" placeholder="How was your experience working with this person?" required></textarea></div><div style="display:flex;gap:10px;justify-content:flex-end"><button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button><button type="submit" class="btn btn-primary">Post Review</button></div></form></div></div></main>
-<footer class=footer><div class=container><p>2025 FreelanceHub</p></div></footer><script src=/js/app.js></script><script>loadJobDetail();updateNav();</script></body></html>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="View job details and submit your proposal on FreelancerHub.">
+    <title>Job Detail — FreelancerHub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/advanced.css">
+    <link rel="stylesheet" href="/css/theme.css">
+    <link rel="stylesheet" href="/css/enhancements.css">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+
+        .job-detail-page { padding: 100px 20px 80px; min-height: 100vh; }
+
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 28px;
+        }
+        .breadcrumb a { color: var(--accent-secondary); text-decoration: none; }
+        .breadcrumb a:hover { text-decoration: underline; }
+        .breadcrumb-sep { opacity: 0.4; }
+
+        .jd-layout { display: grid; grid-template-columns: 1fr 340px; gap: 28px; align-items: start; }
+        @media(max-width: 900px) { .jd-layout { grid-template-columns: 1fr; } }
+
+        .jd-main {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 36px;
+        }
+
+        .jd-category-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+        }
+
+        .jd-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(1.5rem, 3vw, 2rem);
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+            line-height: 1.2;
+        }
+
+        .jd-meta-row {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 28px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 20px;
+        }
+        .jd-meta-item { display: flex; align-items: center; gap: 6px; }
+
+        .jd-section { margin-bottom: 28px; }
+        .jd-section h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .jd-description {
+            color: var(--text-secondary);
+            line-height: 1.8;
+            white-space: pre-wrap;
+        }
+
+        .jd-skills { display: flex; flex-wrap: wrap; gap: 8px; }
+
+        /* Side panel */
+        .jd-sidebar { display: flex; flex-direction: column; gap: 20px; position: sticky; top: 100px; }
+
+        .jd-sidebar-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 24px;
+        }
+
+        .jd-budget-display {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 2rem;
+            font-weight: 800;
+            color: #22d3ee;
+            margin-bottom: 4px;
+        }
+
+        .jd-budget-type {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+
+        .jd-info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.875rem;
+        }
+        .jd-info-row:last-child { border-bottom: none; }
+        .jd-info-label { color: var(--text-muted); }
+        .jd-info-value { font-weight: 600; color: var(--text-primary); }
+
+        /* Client card */
+        .jd-client-card {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .jd-client-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #7c3aed, #2563eb);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #fff;
+            flex-shrink: 0;
+        }
+        .jd-client-name { font-weight: 700; font-size: 0.95rem; }
+        .jd-client-stat { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+
+        /* Proposals */
+        .proposal-card {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 14px;
+            transition: border-color 200ms;
+        }
+        .proposal-card:hover { border-color: rgba(124,58,237,0.3); }
+
+        .proposal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .proposal-freelancer {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .proposal-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #0891b2, #10b981);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: #fff;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+
+        .proposal-freelancer-name { font-weight: 700; font-size: 0.95rem; cursor: pointer; }
+        .proposal-freelancer-name:hover { color: var(--accent); }
+        .proposal-freelancer-meta { font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; }
+        .proposal-amount { font-family: 'Space Grotesk', sans-serif; font-size: 1.2rem; font-weight: 800; color: #22d3ee; }
+
+        .proposal-letter {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.7;
+            margin-bottom: 14px;
+        }
+
+        .proposal-actions { display: flex; gap: 10px; }
+
+        /* Status banner */
+        .jd-status-banner {
+            border-radius: 16px;
+            padding: 16px 20px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        .jd-status-banner.in_progress { background: rgba(14,165,233,0.1); border: 1px solid rgba(14,165,233,0.3); color: #38bdf8; }
+        .jd-status-banner.submitted { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); color: #fbbf24; }
+        .jd-status-banner.completed { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); color: #34d399; }
+        .jd-status-banner.disputed { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: #f87171; }
+
+        /* Action buttons in sidebar */
+        .jd-action-btn {
+            width: 100%;
+            margin-top: 10px;
+            padding: 14px;
+            border-radius: 14px;
+            font-size: 1rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        /* Attachments */
+        .jd-attachment {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 8px 14px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: all 200ms;
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+        .jd-attachment:hover { border-color: var(--accent); color: var(--accent); }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar">
+        <a href="/" class="navbar-brand">
+            <div class="logo-icon">&#9670;</div><span>FreelancerHub</span>
+        </a>
+        <ul class="navbar-links" id="navLinks">
+            <li><a href="/jobs.html">&#128188; Jobs</a></li>
+            <li><a href="/dashboard.html">&#128202; Dashboard</a></li>
+            <li><a href="/chat.html">&#128172; Chat <span class="nav-badge hidden" id="chat-badge"></span></a></li>
+            <li><a href="/notifications.html">&#128276; <span class="nav-badge hidden" id="notif-badge"></span></a></li>
+        </ul>
+        <div class="navbar-right">
+            <a href="/login.html" class="btn btn-outline btn-sm" id="navLogin">Sign In</a>
+            <a href="/register.html" class="btn btn-primary btn-sm" id="navRegister">Get Started</a>
+            <button id="navWalletBtn" class="btn btn-primary btn-sm" style="display:none; margin-right:12px;"></button>
+            <div class="nav-dropdown" id="navUser" style="display:none;">
+                <div class="nav-avatar" id="navAvatar" onclick="toggleDropdown()">U</div>
+                <div class="nav-dropdown-menu" id="navDropdown">
+                    <a href="/profile.html">&#128100; Profile</a>
+                    <a href="/dashboard.html">&#128202; Dashboard</a>
+                    <a href="/post-job.html">&#43; Post Job</a>
+                    <a href="/wallet.html">&#128176; Wallet</a>
+                    <div class="nav-dropdown-divider"></div>
+                    <a href="#" onclick="logout();return false;" style="color:var(--error);">&#128682; Sign Out</a>
+                </div>
+            </div>
+            <button class="nav-toggle" onclick="toggleNav()">&#9776;</button>
+        </div>
+    </nav>
+
+    <div class="toast-container" id="toastContainer"></div>
+    <div class="orb-mid"></div>
+
+    <main class="main-content job-detail-page">
+        <div class="container">
+            <!-- Breadcrumb -->
+            <div class="breadcrumb">
+                <a href="/jobs.html">&#8592; Jobs</a>
+                <span class="breadcrumb-sep">/</span>
+                <span id="breadcrumbTitle">Loading...</span>
+            </div>
+
+            <!-- Status Banner (shown when job is not open) -->
+            <div id="statusBanner" style="display:none;"></div>
+
+            <div class="jd-layout" id="jdLayout">
+                <!-- Loading state -->
+                <div class="loading-overlay" style="grid-column:1/-1;">
+                    <div class="loading-spinner"></div>
+                    <span>Loading job details...</span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Proposal Modal -->
+    <div class="modal-overlay" id="proposalModal">
+        <div class="modal" style="max-width:560px;">
+            <div class="modal-header">
+                <h2>✏️ Submit Proposal</h2>
+                <button class="modal-close" onclick="closeModal()">&#215;</button>
+            </div>
+            <form id="proposalForm">
+                <div class="form-group">
+                    <label class="form-label">Your Bid Amount (ETH) *</label>
+                    <input type="number" class="form-input" id="propAmount" placeholder="e.g. 0.5" min="0.001" step="0.001" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Estimated Delivery (days) *</label>
+                    <input type="number" class="form-input" id="propDelivery" placeholder="e.g. 7" min="1" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Cover Letter *</label>
+                    <textarea class="form-textarea" id="propLetter" placeholder="Describe your approach, relevant experience, and why you're the best fit for this project..." required style="min-height:140px;"></textarea>
+                </div>
+                <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
+                    <button type="button" class="btn btn-outline" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="proposalSubmitBtn">🚀 Submit Proposal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Review Modal -->
+    <div class="modal-overlay" id="reviewModal">
+        <div class="modal" style="max-width:500px;">
+            <div class="modal-header">
+                <h2>⭐ Leave a Review</h2>
+                <button class="modal-close" onclick="closeModal()">&#215;</button>
+            </div>
+            <form id="reviewForm">
+                <div class="form-group">
+                    <label class="form-label">Rating</label>
+                    <div class="star-rating">
+                        <input type="radio" name="rating" value="5" id="r5"><label for="r5">⭐</label>
+                        <input type="radio" name="rating" value="4" id="r4"><label for="r4">⭐</label>
+                        <input type="radio" name="rating" value="3" id="r3"><label for="r3">⭐</label>
+                        <input type="radio" name="rating" value="2" id="r2"><label for="r2">⭐</label>
+                        <input type="radio" name="rating" value="1" id="r1"><label for="r1">⭐</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Your Review</label>
+                    <textarea class="form-textarea" id="reviewComment" placeholder="How was your experience working with this person?" required style="min-height:120px;"></textarea>
+                </div>
+                <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
+                    <button type="button" class="btn btn-outline" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Post Review</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <p>© 2025 FreelancerHub. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="/js/config.js"></script>
+    <script src="/js/theme.js"></script>
+    <script src="/js/app.js"></script>`n    <script src="/js/ux.js"></script>
+    <script>
+        updateNav();
+        if (isLoggedIn()) fetchUnreadCounts();
+
+        function renderJobDetail(data) {
+            const j = data.job;
+            const user = getUser();
+            const isClient = user && user.id === j.client_id;
+            const isFreelancer = user && user.role === 'freelancer';
+            const isAssignedFreelancer = user && user.id === j.freelancer_id;
+
+            document.title = `${j.title} — FreelancerHub`;
+            document.getElementById('breadcrumbTitle').textContent = j.title;
+
+            // Status banner
+            const bannerEl = document.getElementById('statusBanner');
+            const bannerMap = {
+                in_progress: { cls: 'in_progress', icon: '🔵', text: 'This project is currently in progress.' },
+                submitted: { cls: 'submitted', icon: '🟡', text: 'Work has been submitted and is awaiting client review.' },
+                completed: { cls: 'completed', icon: '✅', text: 'This project has been completed successfully.' },
+                disputed: { cls: 'disputed', icon: '⚠️', text: 'A dispute has been raised on this project.' }
+            };
+            if (bannerMap[j.status]) {
+                const b = bannerMap[j.status];
+                bannerEl.className = `jd-status-banner ${b.cls}`;
+                bannerEl.innerHTML = `<span>${b.icon}</span> ${b.text}`;
+                bannerEl.style.display = 'flex';
+            }
+
+            const skillsHtml = (j.skills_required || []).map(s => `<span class="badge badge-skill">${escapeHtml(s)}</span>`).join('');
+            const attachmentsHtml = (j.attachments || []).length ? `
+                <div class="jd-section">
+                    <h3>📎 Attachments</h3>
+                    <div>${j.attachments.map(url => {
+                        const name = url.split('/').pop();
+                        return `<a href="${url}" target="_blank" class="jd-attachment">📎 ${escapeHtml(name)}</a>`;
+                    }).join('')}</div>
+                </div>` : '';
+
+            // Action buttons based on role & status
+            let actionButtons = '';
+            if (isFreelancer && j.status === 'open') {
+                actionButtons = `<button class="btn btn-primary jd-action-btn" onclick="openProposalModal()">✏️ Submit Proposal</button>`;
+            }
+            if ((isFreelancer || isAssignedFreelancer) && j.status === 'in_progress') {
+                actionButtons = `<button class="btn btn-primary jd-action-btn" onclick="submitWork(${j.id})">📤 Submit Delivered Work</button>`;
+            }
+            if (isClient && j.status === 'submitted') {
+                actionButtons = `
+                    <button class="btn btn-primary jd-action-btn" onclick="completeJob(${j.id})">✅ Approve & Release Payment</button>
+                    <button class="btn btn-outline jd-action-btn" style="margin-top:8px;border-color:var(--error);color:var(--error);" onclick="disputeJob(${j.id})">⚠️ Raise a Dispute</button>`;
+            }
+            if (j.status === 'completed') {
+                actionButtons = `<button class="btn btn-outline jd-action-btn" onclick="openReviewModal('${j.id}', '${isClient ? j.freelancer_id : j.client_id}', '${escapeHtml(isClient ? (j.freelancer_name||'Freelancer') : j.client_name)}')">⭐ Leave a Review</button>`;
+            }
+            if (isClient && j.status === 'in_progress' && j.freelancer_id) {
+                actionButtons += `<a href="/chat.html?conv=job_${j.id}_${Math.min(j.client_id, j.freelancer_id)}_${Math.max(j.client_id, j.freelancer_id)}" class="btn btn-outline jd-action-btn" style="margin-top:8px;">💬 Message Freelancer</a>`;
+            }
+
+            document.getElementById('jdLayout').innerHTML = `
+                <!-- Main Content -->
+                <div class="jd-main">
+                    <div class="jd-category-row">
+                        <span class="badge badge-skill">${escapeHtml(j.category || 'General')}</span>
+                        <span class="badge badge-${j.status}">${getStatusIcon(j.status)} ${j.status.replace('_', ' ')}</span>
+                        <span style="font-size:0.8rem;color:var(--text-muted);margin-left:auto;">${timeAgo(j.created_at)}</span>
+                    </div>
+                    <h1 class="jd-title">${escapeHtml(j.title)}</h1>
+                    <div class="jd-meta-row">
+                        <span class="jd-meta-item">💰 ${formatBudget(j.budget_min, j.budget_max, j.budget_type)}</span>
+                        <span class="jd-meta-item">⏱ ${j.duration ? j.duration.replace(/_/g,' ') : 'Flexible'}</span>
+                        <span class="jd-meta-item">📊 ${j.experience_level || 'Any level'}</span>
+                        <span class="jd-meta-item">📝 ${j.proposal_count || 0} proposals</span>
+                        ${j.deadline ? `<span class="jd-meta-item">📅 Due ${new Date(j.deadline).toLocaleDateString()}</span>` : ''}
+                    </div>
+
+                    <div class="jd-section">
+                        <h3>📄 Job Description</h3>
+                        <p class="jd-description">${escapeHtml(j.description)}</p>
+                    </div>
+
+                    ${skillsHtml ? `<div class="jd-section"><h3>🛠 Skills Required</h3><div class="jd-skills">${skillsHtml}</div></div>` : ''}
+                    ${attachmentsHtml}
+                </div>
+
+                <!-- Sidebar -->
+                <div class="jd-sidebar">
+                    <!-- Budget Card -->
+                    <div class="jd-sidebar-card">
+                        <div class="jd-budget-display">${j.budget_min}–${j.budget_max} ETH</div>
+                        <div class="jd-budget-type">${j.budget_type === 'hourly' ? 'Hourly Rate' : 'Fixed Price'}</div>
+                        <div class="jd-info-row"><span class="jd-info-label">Duration</span><span class="jd-info-value">${j.duration ? j.duration.replace(/_/g,' ') : 'Flexible'}</span></div>
+                        <div class="jd-info-row"><span class="jd-info-label">Experience</span><span class="jd-info-value" style="text-transform:capitalize;">${j.experience_level || 'Any'}</span></div>
+                        <div class="jd-info-row"><span class="jd-info-label">Proposals</span><span class="jd-info-value">${j.proposal_count || 0}</span></div>
+                        <div class="jd-info-row"><span class="jd-info-label">Status</span><span class="jd-info-value" style="text-transform:capitalize;">${j.status.replace('_',' ')}</span></div>
+                        ${actionButtons}
+                    </div>
+
+                    <!-- Client Card -->
+                    <div class="jd-sidebar-card">
+                        <h3 style="font-size:0.9rem;font-weight:700;margin-bottom:14px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;">Posted By</h3>
+                        <div class="jd-client-card">
+                            <div class="jd-client-avatar">${(j.client_name||'?').charAt(0).toUpperCase()}</div>
+                            <div>
+                                <div class="jd-client-name">${escapeHtml(j.client_name || 'Anonymous')}</div>
+                                <div class="jd-client-stat">⭐ ${j.client_rating || '0.0'} rating</div>
+                            </div>
+                        </div>
+                        <a href="/profile.html?id=${j.client_id}" class="btn btn-outline" style="width:100%;text-align:center;display:block;">View Profile</a>
+                    </div>
+
+                    ${(j.status === 'in_progress' || j.status === 'submitted' || j.status === 'completed') && j.freelancer_name ? `
+                    <div class="jd-sidebar-card">
+                        <h3 style="font-size:0.9rem;font-weight:700;margin-bottom:14px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;">Assigned Freelancer</h3>
+                        <div class="jd-client-card">
+                            <div class="jd-client-avatar" style="background:linear-gradient(135deg,#0891b2,#10b981);">${(j.freelancer_name||'?').charAt(0).toUpperCase()}</div>
+                            <div>
+                                <div class="jd-client-name">${escapeHtml(j.freelancer_name)}</div>
+                                <div class="jd-client-stat">Hired for this project</div>
+                            </div>
+                        </div>
+                        <a href="/profile.html?id=${j.freelancer_id}" class="btn btn-outline" style="width:100%;text-align:center;display:block;">View Profile</a>
+                    </div>` : ''}
+                </div>
+            `;
+
+            // Append proposals if client
+            if (isClient && data.proposals && data.proposals.length > 0) {
+                const propsHtml = data.proposals.map(p => `
+                    <div class="proposal-card">
+                        <div class="proposal-header">
+                            <div class="proposal-freelancer">
+                                <div class="proposal-avatar">${(p.full_name || '?').charAt(0)}</div>
+                                <div>
+                                    <div class="proposal-freelancer-name" onclick="window.location='/profile.html?id=${p.freelancer_id}'">${escapeHtml(p.full_name)}</div>
+                                    <div class="proposal-freelancer-meta">⭐ ${p.rating || '0.0'} · ${p.total_reviews || 0} reviews · 🕒 ${p.estimated_duration ? p.estimated_duration + ' days' : 'Flexible'}</div>
+                                </div>
+                            </div>
+                            <div class="proposal-amount">${p.proposed_amount} ETH</div>
+                        </div>
+                        <p class="proposal-letter">${escapeHtml(p.cover_letter)}</p>
+                        ${j.status === 'open' && p.status === 'pending' ? `
+                        <div class="proposal-actions">
+                            <button class="btn btn-primary btn-sm" onclick="hireFreelancer(${j.id}, ${p.freelancer_id})">✅ Hire This Freelancer</button>
+                            <a href="/chat.html" class="btn btn-outline btn-sm">💬 Message</a>
+                        </div>` : `<span class="badge badge-${p.status}" style="text-transform:capitalize;">${p.status}</span>`}
+                    </div>
+                `).join('');
+
+                const mainContent = document.querySelector('.jd-main');
+                if (mainContent) {
+                    mainContent.innerHTML += `
+                        <div class="jd-section" style="margin-top:32px;padding-top:28px;border-top:1px solid var(--border-color);">
+                            <h3>📝 Proposals (${data.proposals.length})</h3>
+                            ${propsHtml}
+                        </div>`;
+                }
+            }
+        }
+
+        // Fetch job data on load
+        const jobId = new URLSearchParams(location.search).get('id');
+        if (!jobId) {
+            document.getElementById('jdLayout').innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><div class="empty-state-icon">🔍</div><p>No job ID provided.</p><a href="/jobs.html" class="btn btn-primary">Browse Jobs</a></div>';
+        } else {
+            apiFetch(`/jobs/${jobId}`)
+                .then(data => { renderJobDetail(data); })
+                .catch(() => {
+                    document.getElementById('jdLayout').innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><div class="empty-state-icon">😕</div><p>Job not found or was removed.</p><a href="/jobs.html" class="btn btn-primary">Browse Jobs</a></div>';
+                });
+        }
+
+        function disputeJob(jobId) {
+            const reason = prompt('Please briefly describe the reason for the dispute:');
+            if (!reason) return;
+            apiFetch(`/jobs/${jobId}/dispute`, { method: 'POST', body: JSON.stringify({ reason }) })
+                .then(() => { showToast('Dispute raised. Our team will review the case.', 'info'); setTimeout(() => location.reload(), 1200); })
+                .catch(e => showToast(e.message || 'Failed to raise dispute', 'error'));
+        }
+    </script>
+</body>
+
+</html>
