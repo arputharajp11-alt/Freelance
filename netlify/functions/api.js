@@ -1318,49 +1318,13 @@ async function ensureTablesExist() {
             try { await sqlFn(m); } catch (e) { /* column may already exist */ }
         }
     }
-
-    // ── Schema migrations: add columns that may be missing on older DB instances ──
-    const migrations = [
-        `ALTER TABLE users ADD COLUMN IF NOT EXISTS location TEXT DEFAULT ''`,
-        `ALTER TABLE users ADD COLUMN IF NOT EXISTS title TEXT DEFAULT ''`,
-        `ALTER TABLE users ADD COLUMN IF NOT EXISTS website TEXT DEFAULT ''`,
-        `ALTER TABLE users ADD COLUMN IF NOT EXISTS github TEXT DEFAULT ''`,
-        `ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW()`,
-        `ALTER TABLE users ADD COLUMN IF NOT EXISTS total_earnings REAL DEFAULT 0`,
-        `ALTER TABLE users ADD COLUMN IF NOT EXISTS total_spent REAL DEFAULT 0`,
-        `ALTER TABLE users ADD COLUMN IF NOT EXISTS total_reviews INTEGER DEFAULT 0`,
-        `ALTER TABLE users ADD COLUMN IF NOT EXISTS is_online BOOLEAN DEFAULT false`,
-        `ALTER TABLE users ADD COLUMN IF NOT EXISTS last_seen TIMESTAMPTZ DEFAULT NOW()`,
-        `ALTER TABLE users ADD COLUMN IF NOT EXISTS bio TEXT DEFAULT ''`,
-        `ALTER TABLE users ADD COLUMN IF NOT EXISTS skills TEXT DEFAULT '[]'`,
-        `ALTER TABLE users ADD COLUMN IF NOT EXISTS hourly_rate REAL DEFAULT 0`,
-        `ALTER TABLE users ADD COLUMN IF NOT EXISTS wallet_address TEXT DEFAULT ''`,
-        `ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_token TEXT DEFAULT NULL`,
-        `ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_expires TIMESTAMPTZ DEFAULT NULL`,
-        `ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token TEXT DEFAULT NULL`,
-        `ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_expires TIMESTAMPTZ DEFAULT NULL`,
-    ];
-    for (const m of migrations) {
-        try { await sqlFn(m); } catch (e) { /* column may already exist */ }
-    }
 }
 
-<<<<<<< HEAD
 // ── Initialise DB tables on cold start (runs once per Lambda container) ─────
-// Skip silently if DATABASE_URL is not yet configured (avoid crash on cold start)
-const initPromise = ensureTablesExist().catch(err => { 
-    console.error('DB init error on cold start:', err.message); 
+// Hardcoded DB_REPLICAS mean this always runs — fire-and-forget, never blocks requests.
+ensureTablesExist().catch(err => {
+    console.error('DB init error on cold start:', err.message);
 });
-=======
-// ── Initialise DB tables on cold start (fire-and-forget — never blocks requests) ─
-// Running migrations in the background means login/register work immediately
-// even on the first cold start after a fresh deploy.
-if (process.env.DATABASE_URL) {
-    ensureTablesExist().catch(err => {
-        console.error('DB init error on cold start:', err.message);
-    });
-}
->>>>>>> fc20771 (update files)
 
 // ── Netlify Function export ───────────────────────────────────────────────
 const handler = serverless(app);
