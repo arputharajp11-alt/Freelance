@@ -168,9 +168,9 @@
         </a>
         <ul class="navbar-links" id="navLinks">
             <li><a href="/jobs.html" class="active">&#128188; Jobs</a></li>
-            <li><a href="/dashboard.html">&#128202; Dashboard</a></li>
-            <li><a href="/chat.html">&#128172; Chat <span class="nav-badge hidden" id="chat-badge"></span></a></li>
-            <li><a href="/notifications.html">&#128276; <span class="nav-badge hidden" id="notif-badge"></span></a></li>
+            <li class="auth-only" id="navDashboardLi" style="display:none;"><a href="/dashboard.html">&#128202; Dashboard</a></li>
+            <li class="auth-only" id="navChatLi" style="display:none;"><a href="/chat.html">&#128172; Chat <span class="nav-badge hidden" id="chat-badge"></span></a></li>
+            <li class="auth-only" id="navAlertsLi" style="display:none;"><a href="/notifications.html">&#128276; <span class="nav-badge hidden" id="notif-badge"></span></a></li>
         </ul>
         <div class="navbar-right">
             <a href="/login.html" class="btn btn-outline btn-sm" id="navLogin">Sign In</a>
@@ -203,7 +203,7 @@
                 
                 <div class="premium-filter-bar reveal">
                     <input type="search" class="form-input search-input" id="searchInput"
-                        placeholder="&#128269; Search by title, skill, or keyword..." oninput="filterJobs()">
+                        placeholder="&#128269; Search by title, skill, or keyword..." oninput="debounceFilter()">
     
                     <select class="form-select" id="categoryFilter" onchange="filterJobs()">
                         <option value="">All Categories</option>
@@ -283,6 +283,20 @@
         }
 
         loadJobs();
+
+        // Auth-only nav items
+        if (typeof isLoggedIn === 'function' && isLoggedIn()) {
+            ['navDashboardLi','navChatLi','navAlertsLi'].forEach(id => {
+                const el = document.getElementById(id); if (el) el.style.display = '';
+            });
+        }
+
+        // Debounce search input
+        let _searchTimer;
+        function debounceFilter() {
+            clearTimeout(_searchTimer);
+            _searchTimer = setTimeout(() => filterJobs(), 300);
+        }
 
         // Reveal on scroll
         document.addEventListener('DOMContentLoaded', () => {

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page Not Found — FreelancerHub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/theme.css">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .error-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 40px 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        .error-content { position: relative; z-index: 1; max-width: 560px; }
+        .error-code {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(7rem, 20vw, 12rem);
+            font-weight: 800;
+            line-height: 1;
+            background: linear-gradient(135deg, #7c3aed 0%, #06b6d4 50%, #7c3aed 100%);
+            background-size: 200% 200%;
+            animation: gradientShift 4s ease infinite alternate;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0;
+        }
+        @keyframes gradientShift { from { background-position: 0% 50%; } to { background-position: 100% 50%; } }
+        .error-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin: 16px 0 12px;
+            color: var(--text-primary);
+        }
+        .error-desc {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            line-height: 1.7;
+            margin-bottom: 40px;
+        }
+        .error-actions {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .orb-404 {
+            position: absolute;
+            width: 600px; height: 600px;
+            border-radius: 50%;
+            background: radial-gradient(ellipse, rgba(124,58,237,0.08), transparent 70%);
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/" class="navbar-brand">
+            <div class="logo-icon">&#9670;</div>
+            <span>FreelancerHub</span>
+        </a>
+        <div class="navbar-right">
+            <a href="/login.html" class="btn btn-outline btn-sm">Sign In</a>
+            <a href="/register.html" class="btn btn-primary btn-sm">Get Started</a>
+        </div>
+    </nav>
+
+    <main class="error-page">
+        <div class="orb-404"></div>
+        <div class="error-content">
+            <div class="error-code">404</div>
+            <h1 class="error-title">Page Not Found</h1>
+            <p class="error-desc">
+                Oops! The page you're looking for has wandered off into the blockchain. 
+                It may have been moved, deleted, or the URL might be incorrect.
+            </p>
+            <div class="error-actions">
+                <a href="/" class="btn btn-primary btn-lg">&#127968; Go Home</a>
+                <a href="/jobs.html" class="btn btn-secondary btn-lg">&#128188; Browse Jobs</a>
+            </div>
+        </div>
+    </main>
+
+    <script src="/js/config.js"></script>
+    <script src="/js/theme.js"></script>
+    <script src="/js/app.js"></script>
+</body>
+</html>

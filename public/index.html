@@ -553,9 +553,9 @@
         </a>
         <ul class="navbar-links" id="navLinks">
             <li><a href="/jobs.html">&#128188; Jobs</a></li>
-            <li><a href="/dashboard.html">&#128202; Dashboard</a></li>
-            <li><a href="/chat.html">&#128172; Chat</a></li>
-            <li><a href="/notifications.html">&#128276; Alerts</a></li>
+            <li class="auth-only" id="navDashboardLi" style="display:none;"><a href="/dashboard.html">&#128202; Dashboard</a></li>
+            <li class="auth-only" id="navChatLi" style="display:none;"><a href="/chat.html">&#128172; Chat <span class="nav-badge hidden" id="chat-badge"></span></a></li>
+            <li class="auth-only" id="navAlertsLi" style="display:none;"><a href="/notifications.html">&#128276; <span class="nav-badge hidden" id="notif-badge"></span></a></li>
         </ul>
         <div class="navbar-right">
             <a href="/login.html" class="btn btn-outline btn-sm" id="navLogin">Sign In</a>
@@ -592,7 +592,7 @@
                 </h1>
                 <p class="hero-subtitle">
                     Connect with world-class talent worldwide. Secure payments via smart contracts,
-                    immutable reputation, zero hidden fees. Join 50,000+ professionals.
+                    immutable reputation, zero hidden fees. Join a growing community of professionals.
                 </p>
                 <div class="hero-actions">
                     <a href="/jobs.html" class="btn btn-primary btn-lg" id="exploreBtn">&#128269; Explore Jobs</a>
@@ -603,22 +603,22 @@
                     <div class="hero-trust-item"><div class="check">✓</div> No subscription fees</div>
                     <div class="hero-trust-item"><div class="check">✓</div> Instant ETH payouts</div>
                     <div class="hero-trust-item"><div class="check">✓</div> Smart contract escrow</div>
-                    <div class="hero-trust-item"><div class="check">✓</div> 150+ countries</div>
+                    <div class="hero-trust-item"><div class="check">✓</div> Global freelancers</div>
                 </div>
             </div>
         </section>
 
-        <!-- ─── TRUSTED BY ─── -->
+        <!-- ─── BUILT FOR WEB3 STRIP ─── -->
         <section class="trusted-strip">
             <div class="container">
-                <p class="trusted-label">Trusted by teams at the world's leading companies</p>
+                <p class="trusted-label">Purpose-built for the decentralized economy</p>
                 <div class="trusted-logos">
-                    <div class="trusted-logo"><span class="tl-icon">🔷</span> Polygon Labs</div>
-                    <div class="trusted-logo"><span class="tl-icon">🌑</span> Moonbeam</div>
-                    <div class="trusted-logo"><span class="tl-icon">🔗</span> Chainlink</div>
-                    <div class="trusted-logo"><span class="tl-icon">🦄</span> Uniswap</div>
-                    <div class="trusted-logo"><span class="tl-icon">🌊</span> Aave</div>
-                    <div class="trusted-logo"><span class="tl-icon">⚡</span> Arbitrum</div>
+                    <div class="trusted-logo"><span class="tl-icon">🔷</span> Blockchain Projects</div>
+                    <div class="trusted-logo"><span class="tl-icon">🤖</span> AI &amp; ML Work</div>
+                    <div class="trusted-logo"><span class="tl-icon">🌐</span> Web Development</div>
+                    <div class="trusted-logo"><span class="tl-icon">🎨</span> UI/UX Design</div>
+                    <div class="trusted-logo"><span class="tl-icon">🔐</span> Smart Contract Audits</div>
+                    <div class="trusted-logo"><span class="tl-icon">📣</span> Growth &amp; Marketing</div>
                 </div>
             </div>
         </section>
@@ -926,7 +926,7 @@
                         <div class="section-eyebrow" style="margin-bottom:24px;">&#10024; Join Today — Free Forever</div>
                         <h2 style="font-size:clamp(1.8rem,3.5vw,2.8rem);font-weight:800;margin-bottom:16px;font-family:'Space Grotesk',sans-serif;">Ready to build the<br><span class="gradient-text">decentralized future?</span></h2>
                         <p style="color:var(--text-secondary);margin-bottom:40px;font-size:1rem;max-width:500px;margin-left:auto;margin-right:auto;line-height:1.75;">
-                            Join 50,000+ freelancers and clients. No subscription, no hidden fees — just secure, transparent work powered by blockchain.
+                            Join our growing community of freelancers and clients. No subscription, no hidden fees — just secure, transparent work powered by blockchain.
                         </p>
                         <div class="hero-actions">
                             <a href="/register.html" class="btn btn-primary btn-lg">&#10024; Create Free Account</a>
@@ -955,9 +955,7 @@
                     </div>
                     <p>The premier blockchain-powered marketplace connecting world-class freelancers with visionary clients globally.</p>
                     <div style="display:flex;gap:12px;margin-top:20px;">
-                        <a href="#" style="width:34px;height:34px;background:rgba(124,58,237,0.1);border:1px solid rgba(124,58,237,0.2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:0.9rem;color:var(--text-secondary);" title="Twitter">𝕏</a>
-                        <a href="#" style="width:34px;height:34px;background:rgba(124,58,237,0.1);border:1px solid rgba(124,58,237,0.2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:0.9rem;color:var(--text-secondary);" title="Discord">💬</a>
-                        <a href="#" style="width:34px;height:34px;background:rgba(124,58,237,0.1);border:1px solid rgba(124,58,237,0.2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:0.9rem;color:var(--text-secondary);" title="GitHub">⌥</a>
+                        <a href="https://github.com/arjunaraj/freelancerhub" target="_blank" rel="noopener" style="width:34px;height:34px;background:rgba(124,58,237,0.1);border:1px solid rgba(124,58,237,0.2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:0.9rem;color:var(--text-secondary);transition:all 200ms;" title="GitHub" onmouseover="this.style.borderColor='rgba(124,58,237,0.6)'" onmouseout="this.style.borderColor='rgba(124,58,237,0.2)'">⌥</a>
                     </div>
                 </div>
                 <div class="footer-col">
@@ -978,19 +976,18 @@
                 </div>
                 <div class="footer-col">
                     <h4>Company</h4>
-                    <a href="#">About Us</a>
-                    <a href="#">Blog</a>
-                    <a href="#">Careers</a>
-                    <a href="#">Privacy Policy</a>
-                    <a href="#">Terms of Service</a>
+                    <a href="/about.html">About Us</a>
+                    <a href="https://github.com/arjunaraj/freelancerhub" target="_blank" rel="noopener">Open Source</a>
+                    <a href="/privacy.html">Privacy Policy</a>
+                    <a href="/terms.html">Terms of Service</a>
                 </div>
             </div>
             <div class="footer-bottom">
                 <span>© 2025 FreelancerHub — Blockchain-Powered Freelancing Platform</span>
                 <div class="footer-bottom-links">
-                    <a href="#">Privacy</a>
-                    <a href="#">Terms</a>
-                    <a href="#">Cookies</a>
+                    <a href="/privacy.html">Privacy</a>
+                    <a href="/terms.html">Terms</a>
+                    <a href="/about.html">About</a>
                 </div>
             </div>
         </div>
@@ -1002,18 +999,26 @@
     <script>
         loadFeaturedJobs();
 
-        // Load stats
+        // Load real stats from API
         fetch('/api/stats').then(r => r.json()).then(d => {
             const s = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
-            s('statJobs', d.activeJobs || '1,240+');
-            s('statFreelancers', d.totalFreelancers || '8,700+');
-            s('statCompleted', d.completedJobs || '32,000+');
-            s('statUsers', d.totalUsers || '50,000+');
+            s('statJobs', d.activeJobs ?? 0);
+            s('statFreelancers', d.totalFreelancers ?? 0);
+            s('statCompleted', d.completedJobs ?? 0);
+            s('statUsers', d.totalUsers ?? 0);
         }).catch(() => {
-            // Fallback display values
-            const fallbacks = { statJobs: '1,240+', statFreelancers: '8,700+', statCompleted: '32,000+', statUsers: '50,000+' };
-            Object.entries(fallbacks).forEach(([id, v]) => { const e = document.getElementById(id); if (e) e.textContent = v; });
+            // On error show dashes — don't show fake numbers
+            ['statJobs','statFreelancers','statCompleted','statUsers'].forEach(id => {
+                const e = document.getElementById(id); if (e) e.textContent = '—';
+            });
         });
+
+        // Show auth-only nav items based on login state
+        if (typeof isLoggedIn === 'function' && isLoggedIn()) {
+            ['navDashboardLi','navChatLi','navAlertsLi'].forEach(id => {
+                const el = document.getElementById(id); if (el) el.style.display = '';
+            });
+        }
 
         // Generate hero particles
         (function () {

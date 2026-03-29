@@ -259,9 +259,9 @@
         </a>
         <ul class="navbar-links" id="navLinks">
             <li><a href="/jobs.html">&#128188; Jobs</a></li>
-            <li><a href="/dashboard.html">&#128202; Dashboard</a></li>
-            <li><a href="/chat.html">&#128172; Chat <span class="nav-badge hidden" id="chat-badge"></span></a></li>
-            <li><a href="/notifications.html">&#128276; <span class="nav-badge hidden" id="notif-badge"></span></a></li>
+            <li class="auth-only" id="navDashboardLi" style="display:none;"><a href="/dashboard.html">&#128202; Dashboard</a></li>
+            <li class="auth-only" id="navChatLi" style="display:none;"><a href="/chat.html">&#128172; Chat <span class="nav-badge hidden" id="chat-badge"></span></a></li>
+            <li class="auth-only" id="navAlertsLi" style="display:none;"><a href="/notifications.html">&#128276; <span class="nav-badge hidden" id="notif-badge"></span></a></li>
         </ul>
         <div class="navbar-right">
             <a href="/login.html" class="btn btn-outline btn-sm" id="navLogin">Sign In</a>
@@ -377,6 +377,13 @@
     <script>
         updateNav();
         if (isLoggedIn()) fetchUnreadCounts();
+
+        // Show auth-only nav items when logged in
+        if (isLoggedIn()) {
+            ['navDashboardLi','navChatLi','navAlertsLi'].forEach(id => {
+                const el = document.getElementById(id); if (el) el.style.display = '';
+            });
+        }
 
         function renderJobDetail(data) {
             const j = data.job;

@@ -793,10 +793,40 @@ app.post('/api/jobs/:id/apply', authenticate, authorize('freelancer'), async (re
         `, [jobId, req.user.id, cover_letter, proposed_amount, estimated_duration || '']);
 
         const job = jobResult.rows[0];
+        // Notify client in-app
         await query(`
             INSERT INTO notifications (user_id, type, title, message, link)
             VALUES ($1, 'new_proposal', $2, $3, $4)
         `, [job.client_id, `New proposal on: ${job.title}`, `${req.user.full_name} submitted a proposal`, `/job-detail.html?id=${jobId}`]);
+
+        // Notify client via email (fire-and-forget)
+        const clientResult = await query('SELECT email, full_name FROM users WHERE id = $1', [job.client_id]);
+        if (clientResult.rows.length > 0) {
+            const client = clientResult.rows[0];
+            sendEmail({
+                to: client.email,
+                subject: `New Proposal Received: "${job.title}" — FreelancerHub`,
+                html: `
+                    <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#f9f9f9;padding:20px;">
+                        <div style="background:linear-gradient(135deg,#7c3aed,#06b6d4);padding:28px;border-radius:12px 12px 0 0;text-align:center;">
+                            <h1 style="color:white;margin:0;font-size:22px;">&#128221; New Proposal Received!</h1>
+                        </div>
+                        <div style="background:white;padding:28px;border-radius:0 0 12px 12px;box-shadow:0 2px 10px rgba(0,0,0,0.1);">
+                            <p style="font-size:16px;color:#333;">Hi <strong>${client.full_name}</strong>,</p>
+                            <p style="font-size:15px;color:#555;"><strong>${req.user.full_name}</strong> just submitted a proposal for your job:</p>
+                            <div style="background:#f3f4f6;border-left:4px solid #7c3aed;padding:14px 18px;border-radius:6px;margin:20px 0;">
+                                <strong style="font-size:16px;color:#111;">${job.title}</strong><br>
+                                <span style="color:#555;font-size:14px;">Bid: ${proposed_amount} ETH</span>
+                            </div>
+                            <div style="text-align:center;margin:28px 0;">
+                                <a href="https://arjunlight.netlify.app/job-detail.html?id=${jobId}"
+                                   style="background:linear-gradient(135deg,#7c3aed,#06b6d4);color:white;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:15px;font-weight:bold;">View Proposal</a>
+                            </div>
+                            <p style="font-size:13px;color:#999;text-align:center;">— FreelancerHub Team</p>
+                        </div>
+                    </div>`
+            }).catch(() => {});
+        }
 
         res.status(201).json({ message: 'Proposal submitted successfully!' });
     } catch (error) {
@@ -824,6 +854,35 @@ app.post('/api/jobs/:id/hire/:freelancerId', authenticate, authorize('client'), 
 
         await query(`INSERT INTO notifications (user_id, type, title, message, link) VALUES ($1, 'hired', $2, $3, $4)`,
             [parseInt(freelancerId), `You've been hired!`, `You've been hired for: ${jobResult.rows[0].title}`, `/dashboard.html`]);
+
+        // Send hire email to freelancer (fire-and-forget)
+        const freelancerResult = await query('SELECT email, full_name FROM users WHERE id = $1', [freelancerId]);
+        if (freelancerResult.rows.length > 0) {
+            const fl = freelancerResult.rows[0];
+            sendEmail({
+                to: fl.email,
+                subject: `Congratulations! You've been hired — FreelancerHub`,
+                html: `
+                    <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#f9f9f9;padding:20px;">
+                        <div style="background:linear-gradient(135deg,#10b981,#059669);padding:28px;border-radius:12px 12px 0 0;text-align:center;">
+                            <h1 style="color:white;margin:0;font-size:22px;">&#127881; You've Been Hired!</h1>
+                        </div>
+                        <div style="background:white;padding:28px;border-radius:0 0 12px 12px;box-shadow:0 2px 10px rgba(0,0,0,0.1);">
+                            <p style="font-size:16px;color:#333;">Hi <strong>${fl.full_name}</strong>,</p>
+                            <p style="font-size:15px;color:#555;">Great news! A client has selected you for their project:</p>
+                            <div style="background:#f0fdf4;border-left:4px solid #10b981;padding:14px 18px;border-radius:6px;margin:20px 0;">
+                                <strong style="font-size:16px;color:#111;">${jobResult.rows[0].title}</strong><br>
+                                <span style="color:#555;font-size:14px;">The project is now In Progress. Get started!</span>
+                            </div>
+                            <div style="text-align:center;margin:28px 0;">
+                                <a href="https://arjunlight.netlify.app/dashboard.html"
+                                   style="background:linear-gradient(135deg,#10b981,#059669);color:white;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:15px;font-weight:bold;">Go to Dashboard</a>
+                            </div>
+                            <p style="font-size:13px;color:#999;text-align:center;">— FreelancerHub Team</p>
+                        </div>
+                    </div>`
+            }).catch(() => {});
+        }
 
         res.json({ message: 'Freelancer hired successfully!', conversationId });
     } catch (error) {
@@ -1161,6 +1220,150 @@ app.get('/api/stats', async (req, res) => {
         });
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch stats' });
+    }
+});
+
+// POST /api/admin/seed-jobs — Seeds demo jobs if the marketplace is empty
+// Protected by a simple secret key to avoid abuse
+app.post('/api/admin/seed-jobs', async (req, res) => {
+    try {
+        const { secret } = req.body;
+        if (secret !== (process.env.SEED_SECRET || 'freelancerhub-seed-2025')) {
+            return res.status(403).json({ error: 'Invalid secret' });
+        }
+
+        // Find or create a demo client account
+        let clientRes = await query("SELECT id FROM users WHERE email = 'democlient@freelancerhub.demo'");
+        let clientId;
+        if (clientRes.rows.length === 0) {
+            const bcrypt = require('bcryptjs');
+            const hash = await bcrypt.hash('Demo@1234', 10);
+            const newClient = await query(`
+                INSERT INTO users (email, password, full_name, role, is_verified)
+                VALUES ('democlient@freelancerhub.demo', $1, 'FreelancerHub Demo', 'client', true)
+                RETURNING id
+            `, [hash]);
+            clientId = newClient.rows[0].id;
+        } else {
+            clientId = clientRes.rows[0].id;
+        }
+
+        // Check if we already have jobs
+        const existing = await query('SELECT COUNT(*) as count FROM jobs');
+        if (parseInt(existing.rows[0].count) >= 5) {
+            return res.json({ message: 'Marketplace already has jobs. Skipping seed.', count: existing.rows[0].count });
+        }
+
+        const demoJobs = [
+            {
+                title: 'Solidity Developer for NFT Marketplace',
+                description: `We are looking for an experienced Solidity developer to build a full-featured NFT marketplace on Ethereum.\n\nScope includes:\n- ERC-721 and ERC-1155 smart contracts\n- Auction and fixed-price listing mechanisms\n- Royalty distribution (EIP-2981)\n- Gas optimizations using custom storage patterns\n- Unit tests with Hardhat + Chai\n\nDeployment to Goerli testnet required first, then mainnet.`,
+                category: 'Blockchain',
+                skills: ['Solidity', 'Ethereum', 'Hardhat', 'OpenZeppelin', 'NFT'],
+                budget_min: 2.5, budget_max: 5.0, budget_type: 'fixed',
+                duration: '1-3 months', experience_level: 'expert'
+            },
+            {
+                title: 'Full-Stack Next.js Developer — Web3 Dashboard',
+                description: `Build a Web3 analytics dashboard for a DeFi protocol.\n\nRequirements:\n- Next.js 14 (App Router) + TypeScript\n- Integration with ethers.js / wagmi v2\n- Real-time charts using Recharts or D3\n- Dark/light mode support\n- PostgreSQL database with Prisma ORM\n- Responsive on mobile, tablet, and desktop\n\nMust have prior Web3 frontend experience.`,
+                category: 'Web Development',
+                skills: ['Next.js', 'TypeScript', 'ethers.js', 'PostgreSQL', 'Tailwind CSS'],
+                budget_min: 1.5, budget_max: 3.0, budget_type: 'fixed',
+                duration: '1-3 months', experience_level: 'intermediate'
+            },
+            {
+                title: 'UI/UX Designer for DeFi Mobile App',
+                description: `Design a polished, user-friendly mobile app for a DeFi lending platform.\n\nDeliver:\n- Full Figma design system (light & dark)\n- 15+ screens: onboarding, dashboard, swap, lend/borrow, portfolio\n- Micro-interaction specs and motion guidelines\n- Handoff-ready assets for React Native developers\n\nStrong portfolio of mobile fintech/crypto apps required.`,
+                category: 'Design',
+                skills: ['Figma', 'UI Design', 'UX Research', 'Prototyping', 'Mobile Design'],
+                budget_min: 0.8, budget_max: 2.0, budget_type: 'fixed',
+                duration: 'less_than_1_month', experience_level: 'intermediate'
+            },
+            {
+                title: 'Smart Contract Security Auditor',
+                description: `We need a smart contract security audit for our upcoming DeFi yield aggregator before mainnet launch.\n\nScope:\n- 6 contracts (~1,200 lines of Solidity)\n- Manual review + automated scanning (Slither, Mythril)\n- Full written report with severity ratings\n- Re-audit of fixes included\n\nCertification from Trail of Bits, OpenZeppelin, or Certik is a strong plus.`,
+                category: 'Cybersecurity',
+                skills: ['Smart Contract Audit', 'Solidity', 'Slither', 'Vulnerability Assessment'],
+                budget_min: 3.0, budget_max: 8.0, budget_type: 'fixed',
+                duration: '1-3 months', experience_level: 'expert'
+            },
+            {
+                title: 'Python ML Engineer — On-Chain Fraud Detection',
+                description: `Build a machine learning pipeline to detect fraudulent transactions on Ethereum.\n\nTasks:\n- Extract transaction features from an archive node via Web3.py\n- Train classification models (XGBoost, Random Forest, LightGBM)\n- Build real-time scoring API with FastAPI\n- Dockerize the solution and document everything\n\nDataset provided. Must have experience with graph-based analysis.`,
+                category: 'Data Science',
+                skills: ['Python', 'Machine Learning', 'Web3.py', 'FastAPI', 'Docker'],
+                budget_min: 1.0, budget_max: 2.5, budget_type: 'hourly',
+                duration: '1-3 months', experience_level: 'expert'
+            },
+            {
+                title: 'React Native Developer — Crypto Wallet App',
+                description: `Build a cross-platform crypto wallet app (iOS + Android) with React Native.\n\nFeatures:\n- HD wallet generation (BIP-39/44)\n- Multi-chain support: Ethereum, Polygon, BSC\n- Token swaps via 0x or Uniswap SDK\n- Push notifications for transactions\n- Biometric authentication\n- QR code scanner\n\nApp Store + Play Store submission included in scope.`,
+                category: 'Mobile Development',
+                skills: ['React Native', 'Expo', 'TypeScript', 'ethers.js', 'Crypto Wallet'],
+                budget_min: 2.0, budget_max: 4.5, budget_type: 'fixed',
+                duration: '3-6 months', experience_level: 'expert'
+            },
+            {
+                title: 'Technical Content Writer — Blockchain & Web3',
+                description: `Write high-quality technical blog posts and developer documentation for a Layer 2 blockchain startup.\n\nExpected output (per month):\n- 4 long-form tutorials (2,000–3,000 words each)\n- 2 deep-dive explainers on protocol mechanics\n- Weekly Twitter thread scripts\n- API documentation improvements\n\nMust be able to write code samples in Solidity and JavaScript. Portfolio required.`,
+                category: 'Writing',
+                skills: ['Technical Writing', 'Blockchain', 'Documentation', 'Content Strategy'],
+                budget_min: 0.3, budget_max: 0.8, budget_type: 'hourly',
+                duration: 'ongoing', experience_level: 'intermediate'
+            },
+            {
+                title: 'DevOps Engineer — Ethereum Node Infrastructure',
+                description: `Set up and manage production-grade Ethereum node infrastructure on AWS.\n\nScope:\n- Deploy Geth + Lighthouse (execution + consensus layer)\n- Multi-region setup with failover\n- Monitoring with Prometheus + Grafana\n- Auto-scaling based on request load\n- CI/CD pipeline with GitHub Actions\n- Weekly maintenance and on-call support (5 hrs/week)\n\nExperience with Kubernetes and Terraform mandatory.`,
+                category: 'DevOps',
+                skills: ['AWS', 'Kubernetes', 'Terraform', 'Prometheus', 'Ethereum Node'],
+                budget_min: 0.5, budget_max: 1.2, budget_type: 'hourly',
+                duration: 'ongoing', experience_level: 'expert'
+            }
+        ];
+
+        const inserted = [];
+        for (const job of demoJobs) {
+            const r = await query(`
+                INSERT INTO jobs (client_id, title, description, category, skills_required, budget_min, budget_max, budget_type, duration, experience_level, status)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'open') RETURNING id, title
+            `, [clientId, job.title, job.description, job.category, JSON.stringify(job.skills),
+                job.budget_min, job.budget_max, job.budget_type, job.duration, job.experience_level]);
+            inserted.push(r.rows[0]);
+        }
+
+        // Email all freelancers about new job postings (fire-and-forget)
+        const freelancers = await query("SELECT email, full_name FROM users WHERE role = 'freelancer' AND email != 'democlient@freelancerhub.demo'");
+        const jobLinks = inserted.map(j =>
+            `<li style="margin-bottom:8px;"><a href="https://arjunlight.netlify.app/job-detail.html?id=${j.id}" style="color:#7c3aed;text-decoration:none;font-weight:600;">${j.title}</a></li>`
+        ).join('');
+
+        for (const fl of freelancers.rows) {
+            sendEmail({
+                to: fl.email,
+                subject: `🚀 ${inserted.length} New Jobs Just Posted — FreelancerHub`,
+                html: `
+                    <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#f9f9f9;padding:20px;">
+                        <div style="background:linear-gradient(135deg,#7c3aed,#06b6d4);padding:28px;border-radius:12px 12px 0 0;text-align:center;">
+                            <h1 style="color:white;margin:0;font-size:22px;">&#128188; New Jobs Are Available!</h1>
+                        </div>
+                        <div style="background:white;padding:28px;border-radius:0 0 12px 12px;box-shadow:0 2px 10px rgba(0,0,0,0.1);">
+                            <p style="font-size:16px;color:#333;">Hi <strong>${fl.full_name}</strong>,</p>
+                            <p style="font-size:15px;color:#555;">Several new projects just landed on FreelancerHub. Here's what's available:</p>
+                            <ul style="padding-left:20px;color:#333;font-size:14px;line-height:1.8;">${jobLinks}</ul>
+                            <div style="text-align:center;margin:28px 0;">
+                                <a href="https://arjunlight.netlify.app/jobs.html"
+                                   style="background:linear-gradient(135deg,#7c3aed,#06b6d4);color:white;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:15px;font-weight:bold;">Browse All Jobs</a>
+                            </div>
+                            <p style="font-size:13px;color:#999;text-align:center;">— FreelancerHub Team</p>
+                        </div>
+                    </div>`
+            }).catch(() => {});
+        }
+
+        res.json({ message: `Successfully seeded ${inserted.length} demo jobs and notified ${freelancers.rows.length} freelancers.`, jobs: inserted });
+    } catch (error) {
+        console.error('Seed jobs error:', error);
+        res.status(500).json({ error: 'Failed to seed jobs', details: error.message });
     }
 });
 
